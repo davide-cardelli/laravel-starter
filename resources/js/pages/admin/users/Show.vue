@@ -77,15 +77,22 @@ const assign = () => {
     userRoles.value.push(role);
     selectedRoleId.value = '';
 
-    void http.post(assignRole({ user: props.user.id, role: role.id }).url, {
+    // useHttp's onError fires only on 422; real failures here are http
+    // exceptions (403/419/500) or network errors, so the rollback lives there.
+    const rollback = () => {
+        userRoles.value = userRoles.value.filter((held) => held.id !== role.id);
+        toast.error(`Could not assign role '${role.name}'.`);
+        return false;
+    };
+
+    http.post(assignRole({ user: props.user.id, role: role.id }).url, {
         headers: { Accept: 'application/json' },
         onSuccess: (response) => toast.success(response.message),
-        onError: () => {
-            userRoles.value = userRoles.value.filter(
-                (held) => held.id !== role.id,
-            );
-            toast.error(`Could not assign role '${role.name}'.`);
-        },
+        onHttpException: rollback,
+        onNetworkError: rollback,
+    }).catch(() => {
+        // Errors are handled in the callbacks above; swallow the rejected
+        // promise so it does not surface as an unhandled rejection.
     });
 };
 
@@ -93,13 +100,19 @@ const remove = (role: Role) => {
     const previous = [...userRoles.value];
     userRoles.value = userRoles.value.filter((held) => held.id !== role.id);
 
-    void http.delete(removeRole({ user: props.user.id, role: role.id }).url, {
+    const rollback = () => {
+        userRoles.value = previous;
+        toast.error(`Could not remove role '${role.name}'.`);
+        return false;
+    };
+
+    http.delete(removeRole({ user: props.user.id, role: role.id }).url, {
         headers: { Accept: 'application/json' },
         onSuccess: (response) => toast.success(response.message),
-        onError: () => {
-            userRoles.value = previous;
-            toast.error(`Could not remove role '${role.name}'.`);
-        },
+        onHttpException: rollback,
+        onNetworkError: rollback,
+    }).catch(() => {
+        // See assign(): failures are handled by the callbacks.
     });
 };
 
