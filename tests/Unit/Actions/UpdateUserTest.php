@@ -7,11 +7,12 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 test('update user action updates user successfully', function () {
     $admin = User::factory()->create();
@@ -110,7 +111,7 @@ test('update user action logs operation', function () {
     ]);
 
     Log::shouldHaveReceived('info')
-        ->with('Updating user', \Mockery::on(function ($context) use ($user, $admin) {
+        ->with('Updating user', Mockery::on(function ($context) use ($user, $admin) {
             return $context['user_id'] === $user->id &&
                    $context['updated_by'] === $admin->id &&
                    $context['changes']['first_name'] === true &&

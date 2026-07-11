@@ -24,9 +24,9 @@ class UpdateUser
      * Only updates the password if provided in the data array.
      * Logs detailed change information for audit tracking.
      *
-     * @param  \App\Models\User  $user  The user instance to update
+     * @param  User  $user  The user instance to update
      * @param  array<string, mixed>  $data  The validated user data (first_name, last_name, phone, email, password)
-     * @return \App\Models\User The updated user instance (refreshed from database)
+     * @return User The updated user instance (refreshed from database)
      */
     public function execute(User $user, array $data): User
     {

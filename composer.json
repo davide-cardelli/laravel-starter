@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "davidecardelli/laravel-template",
     "type": "project",
-    "description": "Production-ready Laravel 12 template with Action-Based Architecture, Roles & Permissions, PHPStan Level 9, Deptrac enforcement, and complete quality tooling.",
+    "description": "Production-ready Laravel 13 template with Action-Based Architecture, Roles & Permissions, PHPStan Level 9, Deptrac enforcement, and complete quality tooling.",
     "keywords": [
         "laravel",
         "template",
@@ -19,8 +19,8 @@
         "php": "^8.3",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/fortify": "^1.30",
-        "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1",
+        "laravel/framework": "^13.0",
+        "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.9",
         "spatie/laravel-permission": "^6.22"
     },

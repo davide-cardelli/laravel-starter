@@ -6,11 +6,12 @@ use App\Actions\User\DeleteUser;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseMissing;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 test('delete user action deletes user successfully', function () {
     $admin = User::factory()->create();
@@ -46,7 +47,7 @@ test('delete user action logs at warning level', function () {
     $action->execute($user);
 
     Log::shouldHaveReceived('warning')
-        ->with('Deleting user', \Mockery::on(function ($context) use ($user, $admin) {
+        ->with('Deleting user', Mockery::on(function ($context) use ($user, $admin) {
             return $context['user_id'] === $user->id &&
                    $context['email'] === 'test@example.com' &&
                    $context['name'] === 'Test User' &&
@@ -81,7 +82,7 @@ test('delete user action returns false on failure', function () {
     $user = User::factory()->create();
 
     // Use partial mock to override only the delete method
-    $partialMock = \Mockery::mock($user)->makePartial();
+    $partialMock = Mockery::mock($user)->makePartial();
     $partialMock->shouldReceive('delete')->andReturn(false);
 
     Log::spy();
@@ -92,6 +93,6 @@ test('delete user action returns false on failure', function () {
     expect($result)->toBeFalse();
 
     Log::shouldHaveReceived('error')
-        ->with('Failed to delete user', \Mockery::type('array'))
+        ->with('Failed to delete user', Mockery::type('array'))
         ->once();
 });

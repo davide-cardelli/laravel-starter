@@ -7,10 +7,11 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
 use function Pest\Laravel\actingAs;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     Role::create(['name' => 'admin']);
@@ -54,7 +55,7 @@ test('assign role action logs operation with role name', function () {
     $action->execute($user, 'admin');
 
     Log::shouldHaveReceived('info')
-        ->with('Assigning role to user', \Mockery::on(function ($context) use ($user, $admin) {
+        ->with('Assigning role to user', Mockery::on(function ($context) use ($user, $admin) {
             return $context['user_id'] === $user->id &&
                    $context['email'] === 'test@example.com' &&
                    $context['role'] === 'admin' &&

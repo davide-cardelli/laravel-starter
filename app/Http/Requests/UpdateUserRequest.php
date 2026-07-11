@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -30,7 +31,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $this->route('user');
 
         return [

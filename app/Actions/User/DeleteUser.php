@@ -23,7 +23,7 @@ class DeleteUser
      * This is a sensitive operation that logs at WARNING level
      * and includes success/failure tracking for audit purposes.
      *
-     * @param  \App\Models\User  $user  The user instance to delete
+     * @param  User  $user  The user instance to delete
      * @return bool True if deletion was successful, false otherwise
      */
     public function execute(User $user): bool

@@ -2,11 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
@@ -25,12 +27,12 @@ class UserFactory extends Factory
      *     last_name: string,
      *     phone: string,
      *     email: string,
-     *     email_verified_at: \Illuminate\Support\Carbon,
+     *     email_verified_at: Carbon,
      *     password: string,
      *     remember_token: string,
      *     two_factor_secret: string,
      *     two_factor_recovery_codes: string,
-     *     two_factor_confirmed_at: \Illuminate\Support\Carbon
+     *     two_factor_confirmed_at: Carbon
      * }
      */
     public function definition(): array

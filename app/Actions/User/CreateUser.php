@@ -25,7 +25,7 @@ class CreateUser
      * for monitoring and audit purposes.
      *
      * @param  array<string, mixed>  $data  The validated user data (first_name, last_name, phone, email, password)
-     * @return \App\Models\User The newly created user instance
+     * @return User The newly created user instance
      */
     public function execute(array $data): User
     {

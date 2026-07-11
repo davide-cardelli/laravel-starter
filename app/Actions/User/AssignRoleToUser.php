@@ -20,9 +20,9 @@ class AssignRoleToUser
     /**
      * Execute the assign role action.
      *
-     * @param  \App\Models\User  $user  The user to assign the role to
-     * @param  string|\Spatie\Permission\Models\Role  $role  The role name or Role model instance
-     * @return \App\Models\User The updated user instance (refreshed from database)
+     * @param  User  $user  The user to assign the role to
+     * @param  string|Role  $role  The role name or Role model instance
+     * @return User The updated user instance (refreshed from database)
      */
     public function execute(User $user, string|Role $role): User
     {
