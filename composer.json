@@ -54,7 +54,7 @@
             "composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate --ansi",
-            "@php artisan migrate --graceful --seed --ansi",
+            "@php artisan migrate --seed --ansi",
             "npm install",
             "@php artisan wayfinder:generate --with-form",
             "npm run build",
