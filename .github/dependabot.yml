@@ -40,6 +40,10 @@ updates:
       # Ignore major version updates for Vite (requires manual testing)
       - dependency-name: "vite"
         update-types: ["version-update:semver-major"]
+      # Ignore major version updates for TypeScript (TS 7 native compiler
+      # requires official vue-tsc support before adoption)
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
