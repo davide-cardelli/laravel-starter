@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -41,6 +42,115 @@ test('regular user cannot view users list', function () {
 test('guest cannot view users list', function () {
     $this->get(route('users.index'))
         ->assertRedirect(route('login'));
+});
+
+// SEARCH TESTS
+test('users can be searched by first name', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    $mario = User::factory()->create([
+        'first_name' => 'Mario',
+        'last_name' => 'Rossi',
+        'email' => 'mario.rossi@example.com',
+    ]);
+    User::factory()->create([
+        'first_name' => 'Luigi',
+        'last_name' => 'Verdi',
+        'email' => 'luigi.verdi@example.com',
+    ]);
+
+    actingAs($superAdmin)
+        ->get(route('users.index', ['search' => 'Mario']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/users/Index')
+            ->has('users.data', 1)
+            ->where('users.data.0.id', $mario->id));
+});
+
+test('users can be searched by last name', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    User::factory()->create([
+        'first_name' => 'Mario',
+        'last_name' => 'Rossi',
+        'email' => 'mario.rossi@example.com',
+    ]);
+    $luigi = User::factory()->create([
+        'first_name' => 'Luigi',
+        'last_name' => 'Verdi',
+        'email' => 'luigi.verdi@example.com',
+    ]);
+
+    actingAs($superAdmin)
+        ->get(route('users.index', ['search' => 'Verdi']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/users/Index')
+            ->has('users.data', 1)
+            ->where('users.data.0.id', $luigi->id));
+});
+
+test('users can be searched by email', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    $mario = User::factory()->create([
+        'first_name' => 'Mario',
+        'last_name' => 'Rossi',
+        'email' => 'mario.rossi@example.com',
+    ]);
+    User::factory()->create([
+        'first_name' => 'Luigi',
+        'last_name' => 'Verdi',
+        'email' => 'luigi.verdi@example.com',
+    ]);
+
+    actingAs($superAdmin)
+        ->get(route('users.index', ['search' => 'mario.rossi@']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/users/Index')
+            ->has('users.data', 1)
+            ->where('users.data.0.id', $mario->id));
+});
+
+test('search combined with role filter only returns users matching both', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    $marioAdmin = User::factory()->create([
+        'first_name' => 'Mario',
+        'last_name' => 'Rossi',
+        'email' => 'mario.rossi@example.com',
+    ]);
+    $marioAdmin->assignRole('admin');
+
+    // Matches the search but NOT the role filter: must be excluded
+    $marioUser = User::factory()->create([
+        'first_name' => 'Mario',
+        'last_name' => 'Bianchi',
+        'email' => 'mario.bianchi@example.com',
+    ]);
+    $marioUser->assignRole('user');
+
+    // Matches the role filter but NOT the search: must be excluded
+    $luigiAdmin = User::factory()->create([
+        'first_name' => 'Luigi',
+        'last_name' => 'Verdi',
+        'email' => 'luigi.verdi@example.com',
+    ]);
+    $luigiAdmin->assignRole('admin');
+
+    actingAs($superAdmin)
+        ->get(route('users.index', ['search' => 'Mario', 'role' => 'admin']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/users/Index')
+            ->has('users.data', 1)
+            ->where('users.data.0.id', $marioAdmin->id));
 });
 
 // CREATE TESTS
