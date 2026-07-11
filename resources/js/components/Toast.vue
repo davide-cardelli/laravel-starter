@@ -1,36 +1,20 @@
 <script setup lang="ts">
+import { useToast } from '@/composables/useToast';
 import type { AppPageProps } from '@/types';
 import { usePage } from '@inertiajs/vue3';
 import { CircleCheck, CircleX, X } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
-
-interface ToastItem {
-    id: number;
-    message: string;
-    variant: 'success' | 'error';
-}
-
-const DISMISS_AFTER_MS = 4000;
+import { watch } from 'vue';
 
 const page = usePage<AppPageProps>();
-const toasts = ref<ToastItem[]>([]);
-let nextId = 0;
+const { toasts, dismiss, success, error } = useToast();
 
-const dismiss = (id: number) => {
-    toasts.value = toasts.value.filter((toast) => toast.id !== id);
-};
-
-const push = (message: string, variant: ToastItem['variant']) => {
-    const id = nextId++;
-    toasts.value.push({ id, message, variant });
-    setTimeout(() => dismiss(id), DISMISS_AFTER_MS);
-};
-
+// Session flash messages become toasts on every Inertia visit; other
+// consumers (e.g. XHR calls via useHttp) push through useToast directly.
 watch(
     () => page.props.flash,
     (flash) => {
-        if (flash?.success) push(flash.success, 'success');
-        if (flash?.error) push(flash.error, 'error');
+        if (flash?.success) success(flash.success);
+        if (flash?.error) error(flash.error);
     },
     { immediate: true },
 );

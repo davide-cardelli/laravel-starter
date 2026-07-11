@@ -12,6 +12,7 @@ use App\Actions\User\UpdateUser;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -110,6 +111,7 @@ class UserController extends Controller
 
         return Inertia::render('admin/users/Show', [
             'user' => $user,
+            'roles' => Role::all(),
         ]);
     }
 
@@ -175,13 +177,21 @@ class UserController extends Controller
      */
     #[Authorize('assignRole', User::class)]
     public function assignRole(
+        Request $request,
         User $user,
         Role $role,
         AssignRoleToUser $assignRoleToUser
-    ): RedirectResponse {
+    ): JsonResponse|RedirectResponse {
         $assignRoleToUser->execute($user, $role);
 
-        return back()->with('success', "Role '{$role->name}' assigned successfully.");
+        $message = "Role '{$role->name}' assigned successfully.";
+
+        // XHR callers (e.g. Inertia's useHttp) get JSON instead of a redirect.
+        if ($request->wantsJson()) {
+            return response()->json(['message' => $message]);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -191,12 +201,20 @@ class UserController extends Controller
      */
     #[Authorize('removeRole', User::class)]
     public function removeRole(
+        Request $request,
         User $user,
         Role $role,
         RemoveRoleFromUser $removeRoleFromUser
-    ): RedirectResponse {
+    ): JsonResponse|RedirectResponse {
         $removeRoleFromUser->execute($user, $role);
 
-        return back()->with('success', "Role '{$role->name}' removed successfully.");
+        $message = "Role '{$role->name}' removed successfully.";
+
+        // XHR callers (e.g. Inertia's useHttp) get JSON instead of a redirect.
+        if ($request->wantsJson()) {
+            return response()->json(['message' => $message]);
+        }
+
+        return back()->with('success', $message);
     }
 }

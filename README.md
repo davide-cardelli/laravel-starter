@@ -243,6 +243,7 @@ This template includes a **complete User Management implementation** as a real-w
 | Page | Purpose | Location |
 |------|---------|----------|
 | **Index** | User list with search/pagination | `resources/js/pages/admin/users/Index.vue` |
+| **Show** | User detail with inline role management (Inertia `useHttp` + optimistic UI) | `resources/js/pages/admin/users/Show.vue` |
 | **Create** | User creation form | `resources/js/pages/admin/users/Create.vue` |
 | **Edit** | User editing form | `resources/js/pages/admin/users/Edit.vue` |
 | **UserForm** | Reusable form partial | `resources/js/pages/admin/users/partials/UserForm.vue` |

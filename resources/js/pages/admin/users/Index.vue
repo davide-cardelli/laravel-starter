@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table';
 import { useCan } from '@/composables/useCan';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { create, destroy, edit, index } from '@/routes/users';
+import { create, destroy, edit, index, show } from '@/routes/users';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
@@ -138,9 +138,14 @@ const breadcrumbs: BreadcrumbItem[] = [
                     </TableHeader>
                     <TableBody>
                         <TableRow v-for="user in users.data" :key="user.id">
-                            <TableCell class="font-medium">{{
-                                user.name
-                            }}</TableCell>
+                            <TableCell class="font-medium">
+                                <Link
+                                    :href="show(user.id)"
+                                    class="hover:underline"
+                                >
+                                    {{ user.name }}
+                                </Link>
+                            </TableCell>
                             <TableCell>{{ user.email }}</TableCell>
                             <TableCell>
                                 <Badge

@@ -111,6 +111,57 @@ test('search combined with role filter only returns users matching both', functi
             ->where('users.data.0.id', $marioAdmin->id));
 });
 
+// SHOW PAGE
+test('super admin can view the user detail page', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    $targetUser = User::factory()->create();
+    $targetUser->assignRole('user');
+
+    actingAs($superAdmin)
+        ->get(route('users.show', $targetUser))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/users/Show')
+            ->where('user.id', $targetUser->id)
+            ->has('user.roles', 1)
+            ->has('roles', 3));
+});
+
+test('regular user cannot view the user detail page', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    $targetUser = User::factory()->create();
+
+    actingAs($user)
+        ->get(route('users.show', $targetUser))
+        ->assertStatus(403);
+});
+
+test('roles can be assigned and removed via the json endpoints', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    $targetUser = User::factory()->create();
+    $role = Role::findByName('admin');
+
+    actingAs($superAdmin)
+        ->postJson(route('users.assign-role', [$targetUser, $role]))
+        ->assertOk()
+        ->assertJson(['message' => "Role 'admin' assigned successfully."]);
+
+    expect($targetUser->refresh()->hasRole('admin'))->toBeTrue();
+
+    actingAs($superAdmin)
+        ->deleteJson(route('users.remove-role', [$targetUser, $role]))
+        ->assertOk()
+        ->assertJson(['message' => "Role 'admin' removed successfully."]);
+
+    expect($targetUser->refresh()->hasRole('admin'))->toBeFalse();
+});
+
 // FLASH MESSAGES
 test('flash success message is shared with the destination page after a mutation', function () {
     $superAdmin = User::factory()->create();
