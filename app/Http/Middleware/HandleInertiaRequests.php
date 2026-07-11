@@ -59,6 +59,11 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Session flash messages surfaced by the Toast component.
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
         ];
     }
 }

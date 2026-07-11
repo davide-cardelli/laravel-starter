@@ -111,6 +111,26 @@ test('search combined with role filter only returns users matching both', functi
             ->where('users.data.0.id', $marioAdmin->id));
 });
 
+// FLASH MESSAGES
+test('flash success message is shared with the destination page after a mutation', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    actingAs($superAdmin)
+        ->followingRedirects()
+        ->post(route('users.store'), [
+            'first_name' => 'Flash',
+            'last_name' => 'User',
+            'phone' => '+39 333 9999999',
+            'email' => 'flash@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/users/Index')
+            ->where('flash.success', 'User created successfully.'));
+});
+
 // SHARED PERMISSIONS
 test('shared auth props include the user permissions', function () {
     $superAdmin = User::factory()->create();
