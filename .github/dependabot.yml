@@ -44,6 +44,10 @@ updates:
       # requires official vue-tsc support before adoption)
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      # Ignore major version updates for @types/node (majors track Node
+      # releases; bump manually when the runtime target in .nvmrc moves)
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
