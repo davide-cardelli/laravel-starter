@@ -10,43 +10,43 @@ deptrac:
     - name: Models
       collectors:
         - type: directory
-          regex: app/Models/.*
+          value: app/Models/.*
 
     # Policies: Authorization Layer - define access control
     - name: Policies
       collectors:
         - type: directory
-          regex: app/Policies/.*
+          value: app/Policies/.*
 
     # Actions: Business Logic - orchestrate operations
     - name: Actions
       collectors:
         - type: directory
-          regex: app/Actions/.*
+          value: app/Actions/.*
 
     # Controllers: Presentation Layer - handle HTTP requests
     - name: Controllers
       collectors:
         - type: directory
-          regex: app/Http/Controllers/.*
+          value: app/Http/Controllers/.*
 
     # Requests: Validation Layer - form requests
     - name: Requests
       collectors:
         - type: directory
-          regex: app/Http/Requests/.*
+          value: app/Http/Requests/.*
 
     # Jobs: Background Tasks - async operations
     - name: Jobs
       collectors:
         - type: directory
-          regex: app/Jobs/.*
+          value: app/Jobs/.*
 
     # Middleware: HTTP Pipeline
     - name: Middleware
       collectors:
         - type: directory
-          regex: app/Http/Middleware/.*
+          value: app/Http/Middleware/.*
 
   ruleset:
     # Models: Can depend on NOTHING (pure domain)
