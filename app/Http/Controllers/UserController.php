@@ -86,11 +86,12 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request, CreateUser $createUser): RedirectResponse
     {
-        // Assigning roles requires its own permission: creating users alone must never grant it.
-        abort_if($request->has('roles') && ! $request->user()?->can('assign roles'), 403);
-
-        /** @var array<int, string>|null $roles */
-        $roles = $request->validated('roles');
+        // Assigning roles requires its own permission: creating users alone must
+        // never grant it. Gate on an actual change (a new user starts with no
+        // roles) so the create form's empty/default roles field is not rejected.
+        /** @var array<int, string>|null $submittedRoles */
+        $submittedRoles = $request->validated('roles');
+        $roles = $this->authorizeRoleChange($request, [], $submittedRoles);
 
         $createUser->execute($request->validated(), $roles);
 
@@ -142,17 +143,48 @@ class UserController extends Controller
         User $user,
         UpdateUser $updateUser
     ): RedirectResponse {
-        // Changing roles requires its own permission: editing users alone must never grant it.
-        abort_if($request->has('roles') && ! $request->user()?->can('assign roles'), 403);
-
-        /** @var array<int, string>|null $roles */
-        $roles = $request->validated('roles');
+        // Changing roles requires its own permission: editing users alone must
+        // never grant it. Gate on an actual change vs the user's current roles,
+        // because the edit form always resubmits the existing role set.
+        /** @var array<int, string>|null $submittedRoles */
+        $submittedRoles = $request->validated('roles');
+        $currentRoles = array_values(array_filter($user->getRoleNames()->all(), 'is_string'));
+        $roles = $this->authorizeRoleChange($request, $currentRoles, $submittedRoles);
 
         $updateUser->execute($user, $request->validated(), $roles);
 
         return redirect()
             ->route('users.index')
             ->with('success', 'User updated successfully.');
+    }
+
+    /**
+     * Authorize a role change and resolve which roles to sync.
+     *
+     * Returns the roles the calling user is allowed to apply: the submitted set
+     * when they hold 'assign roles', or null (leave roles untouched) otherwise.
+     * Aborts with 403 only when the submitted set differs from the current one
+     * and the caller lacks 'assign roles' — an unchanged set is always allowed.
+     *
+     * @param  array<int, string>  $current
+     * @param  array<int, string>|null  $submitted
+     * @return array<int, string>|null
+     */
+    private function authorizeRoleChange(Request $request, array $current, ?array $submitted): ?array
+    {
+        // Absent roles field: nothing requested, leave the user's roles untouched.
+        if ($submitted === null) {
+            return null;
+        }
+
+        $canAssign = $request->user()?->can('assign roles') ?? false;
+
+        $changed = collect($submitted)->sort()->values()->all()
+            !== collect($current)->sort()->values()->all();
+
+        abort_if($changed && ! $canAssign, 403);
+
+        return $canAssign ? $submitted : null;
     }
 
     /**

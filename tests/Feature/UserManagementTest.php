@@ -26,6 +26,11 @@ beforeEach(function () {
     $admin = Role::create(['name' => 'admin']);
     $admin->givePermissionTo(['view users', 'create users', 'edit users']);
 
+    // Persona that manages users but may NOT assign roles. Named explicitly so
+    // it does not imply the seeder's "admin" (which does hold 'assign roles').
+    $userManager = Role::create(['name' => 'user-manager']);
+    $userManager->givePermissionTo(['view users', 'create users', 'edit users', 'delete users']);
+
     Role::create(['name' => 'user']);
 });
 
@@ -126,7 +131,7 @@ test('super admin can view the user detail page', function () {
             ->component('admin/users/Show')
             ->where('user.id', $targetUser->id)
             ->has('user.roles', 1)
-            ->has('roles', 3));
+            ->has('roles', 4));
 });
 
 test('regular user cannot view the user detail page', function () {
@@ -555,10 +560,10 @@ test('user update requires valid email format', function () {
 
 // ROLE ASSIGNMENT AUTHORIZATION (privilege escalation regression)
 test('user without assign roles permission cannot set roles on create', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin'); // has 'create users' but NOT 'assign roles'
+    $manager = User::factory()->create();
+    $manager->assignRole('user-manager'); // has 'create users' but NOT 'assign roles'
 
-    actingAs($admin)
+    actingAs($manager)
         ->post(route('users.store'), [
             'first_name' => 'Sneaky',
             'last_name' => 'User',
@@ -574,13 +579,13 @@ test('user without assign roles permission cannot set roles on create', function
 });
 
 test('user without assign roles permission cannot change roles on update', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin'); // has 'edit users' but NOT 'assign roles'
+    $manager = User::factory()->create();
+    $manager->assignRole('user-manager'); // has 'edit users' but NOT 'assign roles'
 
     $targetUser = User::factory()->create();
     $targetUser->assignRole('user');
 
-    actingAs($admin)
+    actingAs($manager)
         ->put(route('users.update', $targetUser), [
             'first_name' => $targetUser->first_name,
             'last_name' => $targetUser->last_name,
@@ -596,10 +601,10 @@ test('user without assign roles permission cannot change roles on update', funct
 });
 
 test('user without assign roles permission can still create users without roles', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
+    $manager = User::factory()->create();
+    $manager->assignRole('user-manager');
 
-    actingAs($admin)
+    actingAs($manager)
         ->post(route('users.store'), [
             'first_name' => 'Plain',
             'last_name' => 'User',
@@ -614,6 +619,52 @@ test('user without assign roles permission can still create users without roles'
     $user = User::where('email', 'plain@example.com')->first();
     expect($user)->not->toBeNull();
     expect($user?->roles->count())->toBe(0);
+});
+
+// Regression: the real UserForm ALWAYS submits a 'roles' field (initialized to
+// the target's current role names), so a manager editing only the phone number
+// still sends roles=[current]. That unchanged set must NOT trigger the 403 gate.
+test('user without assign roles permission can update a user when roles are unchanged', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('user-manager');
+
+    $targetUser = User::factory()->create(['phone' => '+39 333 0000000']);
+    $targetUser->assignRole('user');
+
+    actingAs($manager)
+        ->put(route('users.update', $targetUser), [
+            'first_name' => $targetUser->first_name,
+            'last_name' => $targetUser->last_name,
+            'phone' => '+39 333 1111199', // only the phone changes
+            'email' => $targetUser->email,
+            'roles' => ['user'], // same set the edit form ships
+        ])
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
+
+    $targetUser->refresh();
+    expect($targetUser->phone)->toBe('+39 333 1111199');
+    expect($targetUser->hasRole('user'))->toBeTrue(); // roles untouched
+});
+
+test('user without assign roles permission can create a user when roles field is empty', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('user-manager');
+
+    actingAs($manager)
+        ->post(route('users.store'), [
+            'first_name' => 'Formy',
+            'last_name' => 'User',
+            'phone' => '+39 333 2222299',
+            'email' => 'formy@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'roles' => [], // the create form ships an empty array, not an absent key
+        ])
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
+
+    expect(User::where('email', 'formy@example.com')->first()?->roles->count())->toBe(0);
 });
 
 test('roles must be existing role names', function () {
