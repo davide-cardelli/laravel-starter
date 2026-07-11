@@ -9,7 +9,7 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 10
     reviewers:
-      - "davidecardelli"
+      - "davide-cardelli"
     labels:
       - "dependencies"
       - "composer"
@@ -26,7 +26,7 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 10
     reviewers:
-      - "davidecardelli"
+      - "davide-cardelli"
     labels:
       - "dependencies"
       - "npm"

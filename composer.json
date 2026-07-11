@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "davidecardelli/laravel-template",
+    "name": "davide-cardelli/laravel-template",
     "type": "project",
     "description": "Production-ready Laravel 13 template with Action-Based Architecture, Roles & Permissions, PHPStan Level 9, Deptrac enforcement, and complete quality tooling.",
     "keywords": [

@@ -1,6 +1,6 @@
 # Laravel Starter Template
 
-[![CI](https://github.com/davidecardelli/laravel-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/davidecardelli/laravel-starter/actions/workflows/ci.yml)
+[![CI](https://github.com/davide-cardelli/laravel-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/davide-cardelli/laravel-starter/actions/workflows/ci.yml)
 [![PHPStan Level 9](https://img.shields.io/badge/PHPStan-Level%209-brightgreen.svg)](https://phpstan.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -725,4 +725,4 @@ Built with industry-leading tools and frameworks:
 
 **Ready to build something amazing?** 🚀
 
-**[Use this template](https://github.com/davidecardelli/laravel-starter/generate)** to get started in minutes!
+**[Use this template](https://github.com/davide-cardelli/laravel-starter/generate)** to get started in minutes!
