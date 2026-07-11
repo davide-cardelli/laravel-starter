@@ -362,7 +362,8 @@ Hooks live in `.githooks/` (tracked in the repository) and are activated by
 - ✅ Full test suite (auto-detects Sail)
 - ✅ Production build
 
-Run the same gate manually anytime with `composer check`.
+Run the static, style, architecture and build gates locally with `composer check`
+(run the test suite separately with `sail composer test`, which needs the database).
 
 ---
 

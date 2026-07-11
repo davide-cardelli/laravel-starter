@@ -17,15 +17,20 @@ import { index as usersIndex } from '@/routes/users';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Users } from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
-const mainNavItems: NavItem[] = [
+const canViewUsers = useCan('view users');
+
+// Computed so the admin link tracks the reactive permission (a bare useCan()
+// ComputedRef would always be truthy in a plain array built once at setup).
+const mainNavItems = computed<NavItem[]>(() => [
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
     },
-    ...(useCan('view users')
+    ...(canViewUsers.value
         ? [
               {
                   title: 'Users',
@@ -34,7 +39,7 @@ const mainNavItems: NavItem[] = [
               },
           ]
         : []),
-];
+]);
 
 const footerNavItems: NavItem[] = [
     {
