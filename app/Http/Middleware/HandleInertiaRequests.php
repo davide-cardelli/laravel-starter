@@ -50,7 +50,6 @@ class HandleInertiaRequests extends Middleware
                     'phone',
                     'name',
                     'email',
-                    'avatar',
                     'email_verified_at',
                     'created_at',
                     'updated_at',
