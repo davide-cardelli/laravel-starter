@@ -7,21 +7,10 @@ import { useToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { assignRole, index, removeRole } from '@/routes/users';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, Role } from '@/types';
 import { Head, Link, useHttp } from '@inertiajs/vue3';
 import { ArrowLeft, Plus, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-
-interface Permission {
-    id: number;
-    name: string;
-}
-
-interface Role {
-    id: number;
-    name: string;
-    permissions?: Permission[];
-}
 
 interface ShowUser {
     id: number;
