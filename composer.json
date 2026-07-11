@@ -66,7 +66,7 @@
             "@analyse",
             "@deptrac",
             "npm run check",
-            "npm run build"
+            "npm run build:assets"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",

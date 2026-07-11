@@ -44,7 +44,8 @@ $TEST_RUNNER --quiet || fail "Tests failed!" "$TEST_RUNNER"
 echo "   ✅ Tests: All passing"
 
 echo "🏗️  [6/6] Building frontend..."
-npm run build --silent || fail "Build failed!" "npm run build"
+# Type-check already ran in step [1/6]; build assets without re-running vue-tsc.
+npm run build:assets --silent || fail "Build failed!" "npm run build"
 echo "   ✅ Build: Successful"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

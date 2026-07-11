@@ -9,6 +9,7 @@
     },
     "scripts": {
         "build": "vue-tsc --noEmit && vite build",
+        "build:assets": "vite build",
         "build:ssr": "vue-tsc --noEmit && vite build && vite build --ssr",
         "dev": "vite",
         "type-check": "vue-tsc --noEmit",
