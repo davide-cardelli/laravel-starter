@@ -1,6 +1,6 @@
 {
     "name": "laravel-template",
-    "description": "Production-ready Laravel 12 template with Vue 3, TypeScript, and complete quality tooling",
+    "description": "Production-ready Laravel 13 template with Vue 3, TypeScript, and complete quality tooling",
     "version": "1.0.0",
     "private": true,
     "type": "module",

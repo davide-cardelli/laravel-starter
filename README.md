@@ -2,10 +2,10 @@
 
 [![CI](https://github.com/davidecardelli/laravel-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/davidecardelli/laravel-starter/actions/workflows/ci.yml)
 [![PHPStan Level 9](https://img.shields.io/badge/PHPStan-Level%209-brightgreen.svg)](https://phpstan.org/)
-[![Tests](https://img.shields.io/badge/tests-105%20passing-brightgreen)](https://github.com/davidecardelli/laravel-starter)
+[![Tests](https://img.shields.io/badge/tests-109%20passing-brightgreen)](https://github.com/davidecardelli/laravel-starter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Production-ready Laravel 12 starter template** with Action-Based Architecture, User Management, Roles & Permissions, and complete quality tooling.
+> **Production-ready Laravel 13 starter template** with Action-Based Architecture, User Management, Roles & Permissions, and complete quality tooling.
 
 ---
 
@@ -13,7 +13,7 @@
 
 - 🚀 **Production-Ready** - Not a tutorial, not a demo. Real code you can ship today
 - 🏗️ **Architecture-First** - Enforced patterns with Deptrac, fully documented and testable
-- 🧪 **Quality-Driven** - PHPStan Level 9, 105 passing tests, automated git hooks
+- 🧪 **Quality-Driven** - PHPStan Level 9, 109 passing tests, automated git hooks
 - 📚 **Learning Resource** - Complete real-world example with industry best practices
 - 🔋 **Batteries Included** - Auth, 2FA, roles, permissions, user management CRUD
 - 💪 **Type-Safe** - Full TypeScript support for frontend, PHPStan Level 9 for backend
@@ -25,8 +25,8 @@
 ## ✨ Features
 
 ### Core Stack
-- **Laravel 12** - Latest features and improvements
-- **Vue 3 + TypeScript + Inertia.js** - Modern, type-safe frontend
+- **Laravel 13** - Latest features and improvements
+- **Vue 3 + TypeScript + Inertia.js 3** - Modern, type-safe frontend
 - **PostgreSQL** - Robust relational database
 - **Laravel Sail** - Docker development environment
 - **Spatie Permission** - Complete role and permission management
@@ -40,7 +40,7 @@
 - **Laravel Pint** - Consistent PHP code style (PSR-12)
 - **ESLint + Prettier** - TypeScript/Vue code formatting
 - **Git Hooks** - Pre-commit formatting, pre-push quality checks
-- **105 Passing Tests** - Feature and unit test coverage
+- **109 Passing Tests** - Feature and unit test coverage
 
 ### Frontend Stack
 - **Vite** - Lightning-fast hot module replacement
@@ -149,9 +149,9 @@ sail artisan pail
 For developers who prefer **native PHP** or want **maximum performance**.
 
 **Prerequisites:**
-- PHP 8.2 or higher
+- PHP 8.3 or higher
 - [Composer](https://getcomposer.org/)
-- [Node.js 18+](https://nodejs.org/)
+- [Node.js 22+](https://nodejs.org/)
 - PostgreSQL 13 or higher
 
 **Installation:**
@@ -362,7 +362,7 @@ npm run dev             # Start Vite
 - ✅ ESLint validation
 - ✅ PHPStan Level 9 analysis
 - ✅ Deptrac architecture validation
-- ✅ Full test suite (105 tests)
+- ✅ Full test suite (109 tests)
 
 Hooks are installed automatically via Composer and **enforce quality standards** before code enters the repository.
 
@@ -377,7 +377,7 @@ Every push and pull request automatically runs:
 **Quality Matrix:**
 | Check | Purpose | Tool |
 |-------|---------|------|
-| **Tests** | PHP 8.2 & 8.3 + PostgreSQL 18 | Pest |
+| **Tests** | PHP 8.3 + PostgreSQL 18 | Pest |
 | **PHPStan** | Level 9 static analysis | PHPStan |
 | **Deptrac** | Architecture enforcement | Deptrac |
 | **Pint** | Code style validation | Laravel Pint |
@@ -464,7 +464,7 @@ Every Action logs:
 ## 🧪 Testing
 
 ```bash
-# Run all tests (105 tests, 280 assertions)
+# Run all tests (109 tests, 320 assertions)
 composer test
 
 # Run specific test suite
