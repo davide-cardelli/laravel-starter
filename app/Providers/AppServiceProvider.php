@@ -36,10 +36,14 @@ class AppServiceProvider extends ServiceProvider
         // same instance is shared across the codebase.
         Date::use(CarbonImmutable::class);
 
-        // Behind a TLS-terminating proxy the framework would otherwise
-        // generate http:// links in production.
         if ($this->app->isProduction()) {
+            // Behind a TLS-terminating proxy the framework would otherwise
+            // generate http:// links in production.
             URL::forceScheme('https');
+
+            // Enforce the Secure cookie flag in code, so copying .env.example
+            // to production can never ship session cookies over plain http.
+            config(['session.secure' => true]);
         }
 
         // Single source of truth for the password policy used by Fortify
