@@ -156,23 +156,15 @@ For developers who prefer **native PHP** or want **maximum performance**.
 **Installation:**
 
 ```bash
-# 1. Install and setup
-composer install
-
-# 2. Copy and configure environment
+# 1. Copy and configure environment
 cp .env.example .env
-# Edit .env with your database credentials
+# Native install: set DB_HOST=127.0.0.1 (plus REDIS_HOST/MAIL_HOST if used)
+# and create your database, plus a "testing" database for the test suite
 
-# 3. Generate application key
-php artisan key:generate
+# 2. One-command bootstrap: installs, migrates, seeds, builds
+composer setup
 
-# 4. Run migrations and seed
-php artisan migrate --seed
-
-# 5. Install frontend dependencies
-npm install
-
-# 6. Start development servers (Laravel + Vite)
+# 3. Start development servers (Laravel + Vite)
 composer dev
 ```
 
@@ -464,8 +456,12 @@ Every Action logs:
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-composer test
+# Run all tests (inside Sail)
+sail composer test
+
+# Run tests natively: phpunit.xml env entries are overridable from
+# your shell (requires a local "testing" PostgreSQL database)
+DB_HOST=127.0.0.1 DB_USERNAME=your_user DB_PASSWORD=your_password php artisan test
 
 # Run specific test suite
 composer test -- --filter=UserManagementTest
