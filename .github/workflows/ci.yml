@@ -60,8 +60,22 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      # Wayfinder infers route parameter types from the database schema, so it
+      # needs a migrated database reachable at generation time. A throwaway
+      # SQLite file keeps this independent of the Postgres service.
+      - name: Prepare a database for route generation
+        run: |
+          touch database/database.sqlite
+          php artisan migrate --force
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+
       - name: Generate Wayfinder routes
         run: php artisan wayfinder:generate --with-form
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
 
       - name: Build frontend
         run: npm run build
@@ -173,8 +187,22 @@ jobs:
       - name: Generate app key
         run: php artisan key:generate
 
+      # Wayfinder infers route parameter types from the database schema, so it
+      # needs a migrated database reachable at generation time. A throwaway
+      # SQLite file keeps this job free of a database service.
+      - name: Prepare a database for route generation
+        run: |
+          touch database/database.sqlite
+          php artisan migrate --force
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+
       - name: Generate Wayfinder routes
         run: php artisan wayfinder:generate --with-form
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
