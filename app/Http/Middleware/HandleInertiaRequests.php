@@ -55,6 +55,9 @@ class HandleInertiaRequests extends Middleware
                     'created_at',
                     'updated_at',
                 ]),
+                // Permission names let the frontend hide actions the user
+                // cannot perform; server-side Policies remain the authority.
+                'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

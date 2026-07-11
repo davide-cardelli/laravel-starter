@@ -111,6 +111,27 @@ test('search combined with role filter only returns users matching both', functi
             ->where('users.data.0.id', $marioAdmin->id));
 });
 
+// SHARED PERMISSIONS
+test('shared auth props include the user permissions', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    actingAs($superAdmin)
+        ->get(route('users.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('auth.permissions', 5)
+            ->where('auth.permissions', fn ($permissions) => collect($permissions)->contains('assign roles')));
+});
+
+test('shared permissions are empty for users without permissions', function () {
+    $user = User::factory()->create();
+    $user->assignRole('user');
+
+    actingAs($user)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page->has('auth.permissions', 0));
+});
+
 // CREATE TESTS
 test('super admin can create new user', function () {
     $superAdmin = User::factory()->create();

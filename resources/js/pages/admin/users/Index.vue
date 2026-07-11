@@ -11,7 +11,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useCan } from '@/composables/useCan';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { create, destroy, edit, index } from '@/routes/users';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
@@ -55,12 +57,16 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const canCreateUsers = useCan('create users');
+const canEditUsers = useCan('edit users');
+const canDeleteUsers = useCan('delete users');
+
 const search = ref(props.filters.search || '');
 const roleFilter = ref(props.filters.role || '');
 
 const performSearch = () => {
     router.get(
-        '/admin/users',
+        index().url,
         { search: search.value, role: roleFilter.value },
         { preserveState: true },
     );
@@ -68,7 +74,7 @@ const performSearch = () => {
 
 const deleteUser = (userId: number) => {
     if (confirm('Are you sure you want to delete this user?')) {
-        router.delete(`/admin/users/${userId}`);
+        router.delete(destroy(userId).url);
     }
 };
 
@@ -85,7 +91,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         <div class="flex h-full flex-1 flex-col gap-4 p-4">
             <div class="flex items-center justify-between">
                 <h1 class="text-2xl font-bold">User Management</h1>
-                <Link :href="'/admin/users/create'">
+                <Link v-if="canCreateUsers" :href="create()">
                     <Button>
                         <Plus class="mr-2 h-4 w-4" />
                         Add User
@@ -162,13 +168,15 @@ const breadcrumbs: BreadcrumbItem[] = [
                             <TableCell class="text-right">
                                 <div class="flex justify-end gap-2">
                                     <Link
-                                        :href="`/admin/users/${user.id}/edit`"
+                                        v-if="canEditUsers"
+                                        :href="edit(user.id)"
                                     >
                                         <Button variant="ghost" size="sm">
                                             <Pencil class="h-4 w-4" />
                                         </Button>
                                     </Link>
                                     <Button
+                                        v-if="canDeleteUsers"
                                         variant="ghost"
                                         size="sm"
                                         @click="deleteUser(user.id)"
