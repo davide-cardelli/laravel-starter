@@ -45,11 +45,11 @@ test('guest cannot view users list', function () {
 });
 
 // SEARCH TESTS
-test('users can be searched by first name', function () {
+test('users can be searched', function (string $term, string $expectedEmail) {
     $superAdmin = User::factory()->create();
     $superAdmin->assignRole('super-admin');
 
-    $mario = User::factory()->create([
+    User::factory()->create([
         'first_name' => 'Mario',
         'last_name' => 'Rossi',
         'email' => 'mario.rossi@example.com',
@@ -61,61 +61,17 @@ test('users can be searched by first name', function () {
     ]);
 
     actingAs($superAdmin)
-        ->get(route('users.index', ['search' => 'Mario']))
+        ->get(route('users.index', ['search' => $term]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('admin/users/Index')
             ->has('users.data', 1)
-            ->where('users.data.0.id', $mario->id));
-});
-
-test('users can be searched by last name', function () {
-    $superAdmin = User::factory()->create();
-    $superAdmin->assignRole('super-admin');
-
-    User::factory()->create([
-        'first_name' => 'Mario',
-        'last_name' => 'Rossi',
-        'email' => 'mario.rossi@example.com',
-    ]);
-    $luigi = User::factory()->create([
-        'first_name' => 'Luigi',
-        'last_name' => 'Verdi',
-        'email' => 'luigi.verdi@example.com',
-    ]);
-
-    actingAs($superAdmin)
-        ->get(route('users.index', ['search' => 'Verdi']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('admin/users/Index')
-            ->has('users.data', 1)
-            ->where('users.data.0.id', $luigi->id));
-});
-
-test('users can be searched by email', function () {
-    $superAdmin = User::factory()->create();
-    $superAdmin->assignRole('super-admin');
-
-    $mario = User::factory()->create([
-        'first_name' => 'Mario',
-        'last_name' => 'Rossi',
-        'email' => 'mario.rossi@example.com',
-    ]);
-    User::factory()->create([
-        'first_name' => 'Luigi',
-        'last_name' => 'Verdi',
-        'email' => 'luigi.verdi@example.com',
-    ]);
-
-    actingAs($superAdmin)
-        ->get(route('users.index', ['search' => 'mario.rossi@']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('admin/users/Index')
-            ->has('users.data', 1)
-            ->where('users.data.0.id', $mario->id));
-});
+            ->where('users.data.0.email', $expectedEmail));
+})->with([
+    'first name' => ['Mario', 'mario.rossi@example.com'],
+    'last name' => ['Verdi', 'luigi.verdi@example.com'],
+    'email' => ['mario.rossi@', 'mario.rossi@example.com'],
+]);
 
 test('search combined with role filter only returns users matching both', function () {
     $superAdmin = User::factory()->create();

@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/davidecardelli/laravel-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/davidecardelli/laravel-starter/actions/workflows/ci.yml)
 [![PHPStan Level 9](https://img.shields.io/badge/PHPStan-Level%209-brightgreen.svg)](https://phpstan.org/)
-[![Tests](https://img.shields.io/badge/tests-109%20passing-brightgreen)](https://github.com/davidecardelli/laravel-starter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Production-ready Laravel 13 starter template** with Action-Based Architecture, User Management, Roles & Permissions, and complete quality tooling.
@@ -13,7 +12,7 @@
 
 - 🚀 **Production-Ready** - Not a tutorial, not a demo. Real code you can ship today
 - 🏗️ **Architecture-First** - Enforced patterns with Deptrac, fully documented and testable
-- 🧪 **Quality-Driven** - PHPStan Level 9, 109 passing tests, automated git hooks
+- 🧪 **Quality-Driven** - PHPStan Level 9, full Pest suite, automated git hooks
 - 📚 **Learning Resource** - Complete real-world example with industry best practices
 - 🔋 **Batteries Included** - Auth, 2FA, roles, permissions, user management CRUD
 - 💪 **Type-Safe** - Full TypeScript support for frontend, PHPStan Level 9 for backend
@@ -40,7 +39,7 @@
 - **Laravel Pint** - Consistent PHP code style (PSR-12)
 - **ESLint + Prettier** - TypeScript/Vue code formatting
 - **Git Hooks** - Pre-commit formatting, pre-push quality checks
-- **109 Passing Tests** - Feature and unit test coverage
+- **Comprehensive Test Suite** - Feature and unit coverage with Pest
 
 ### Frontend Stack
 - **Vite** - Lightning-fast hot module replacement
@@ -363,7 +362,7 @@ npm run dev             # Start Vite
 - ✅ ESLint validation
 - ✅ PHPStan Level 9 analysis
 - ✅ Deptrac architecture validation
-- ✅ Full test suite (109 tests)
+- ✅ Full test suite (Pest)
 
 Hooks are installed automatically via Composer and **enforce quality standards** before code enters the repository.
 
@@ -465,7 +464,7 @@ Every Action logs:
 ## 🧪 Testing
 
 ```bash
-# Run all tests (109 tests, 320 assertions)
+# Run all tests
 composer test
 
 # Run specific test suite

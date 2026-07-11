@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -68,5 +70,18 @@ class User extends Authenticatable
         return Attribute::make(
             get: fn (): string => trim("{$this->first_name} {$this->last_name}"),
         );
+    }
+
+    /**
+     * Scope the query to users matching the given search term.
+     *
+     * Matches first name, last name, or email.
+     *
+     * @param  Builder<User>  $query
+     */
+    #[Scope]
+    protected function search(Builder $query, string $term): void
+    {
+        $query->whereAny(['first_name', 'last_name', 'email'], 'like', "%{$term}%");
     }
 }
