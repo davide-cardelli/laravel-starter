@@ -24,6 +24,15 @@ test('secure session cookies are enforced in production', function () {
     expect(config('session.secure'))->toBeTrue();
 });
 
+test('secure session cookies are enforced in non-local environments like staging', function () {
+    config(['session.secure' => false]);
+    $this->app['env'] = 'staging';
+
+    (new AppServiceProvider($this->app))->boot();
+
+    expect(config('session.secure'))->toBeTrue();
+});
+
 test('session cookie security is left to configuration outside production', function () {
     config(['session.secure' => false]);
 

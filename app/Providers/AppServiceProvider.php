@@ -40,9 +40,12 @@ class AppServiceProvider extends ServiceProvider
             // Behind a TLS-terminating proxy the framework would otherwise
             // generate http:// links in production.
             URL::forceScheme('https');
+        }
 
-            // Enforce the Secure cookie flag in code, so copying .env.example
-            // to production can never ship session cookies over plain http.
+        // Enforce Secure session cookies on every TLS-served environment
+        // (production, staging, preview) — only local/testing run over plain
+        // http. This holds regardless of what .env.example ships.
+        if (! $this->app->environment('local', 'testing')) {
             config(['session.secure' => true]);
         }
 
