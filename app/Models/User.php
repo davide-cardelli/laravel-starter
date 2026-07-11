@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -75,13 +76,17 @@ class User extends Authenticatable
     /**
      * Scope the query to users matching the given search term.
      *
-     * Matches first name, last name, or email.
+     * Matches the full name ("Mario Rossi"), either name part, or the
+     * email, case-insensitively. Uses ILIKE, which is PostgreSQL-specific.
      *
      * @param  Builder<User>  $query
      */
     #[Scope]
     protected function search(Builder $query, string $term): void
     {
-        $query->whereAny(['first_name', 'last_name', 'email'], 'like', "%{$term}%");
+        $query->whereAny([
+            DB::raw("concat(first_name, ' ', last_name)"),
+            'email',
+        ], 'ilike', "%{$term}%");
     }
 }

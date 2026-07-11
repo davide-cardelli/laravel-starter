@@ -71,6 +71,8 @@ test('users can be searched', function (string $term, string $expectedEmail) {
     'first name' => ['Mario', 'mario.rossi@example.com'],
     'last name' => ['Verdi', 'luigi.verdi@example.com'],
     'email' => ['mario.rossi@', 'mario.rossi@example.com'],
+    'full name' => ['Mario Rossi', 'mario.rossi@example.com'],
+    'case-insensitive' => ['vErDi', 'luigi.verdi@example.com'],
 ]);
 
 test('search combined with role filter only returns users matching both', function () {
