@@ -91,6 +91,7 @@ test('create user action logs operation', function () {
             'first_name' => 'Jane',
             'last_name' => 'Doe',
             'phone' => '+39 333 1234567',
+            'roles' => null,
             'created_by' => $admin->id,
         ])
         ->once();

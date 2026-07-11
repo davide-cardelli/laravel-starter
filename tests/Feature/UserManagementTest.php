@@ -461,6 +461,88 @@ test('user update requires valid email format', function () {
         ->assertSessionHasErrors('email');
 });
 
+// ROLE ASSIGNMENT AUTHORIZATION (privilege escalation regression)
+test('user without assign roles permission cannot set roles on create', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin'); // has 'create users' but NOT 'assign roles'
+
+    actingAs($admin)
+        ->post(route('users.store'), [
+            'first_name' => 'Sneaky',
+            'last_name' => 'User',
+            'phone' => '+39 333 6666666',
+            'email' => 'sneaky@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'roles' => ['super-admin'],
+        ])
+        ->assertStatus(403);
+
+    assertDatabaseMissing('users', ['email' => 'sneaky@example.com']);
+});
+
+test('user without assign roles permission cannot change roles on update', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin'); // has 'edit users' but NOT 'assign roles'
+
+    $targetUser = User::factory()->create();
+    $targetUser->assignRole('user');
+
+    actingAs($admin)
+        ->put(route('users.update', $targetUser), [
+            'first_name' => $targetUser->first_name,
+            'last_name' => $targetUser->last_name,
+            'phone' => $targetUser->phone,
+            'email' => $targetUser->email,
+            'roles' => ['super-admin'],
+        ])
+        ->assertStatus(403);
+
+    $targetUser->refresh();
+    expect($targetUser->hasRole('user'))->toBeTrue();
+    expect($targetUser->hasRole('super-admin'))->toBeFalse();
+});
+
+test('user without assign roles permission can still create users without roles', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    actingAs($admin)
+        ->post(route('users.store'), [
+            'first_name' => 'Plain',
+            'last_name' => 'User',
+            'phone' => '+39 333 7777777',
+            'email' => 'plain@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
+
+    $user = User::where('email', 'plain@example.com')->first();
+    expect($user)->not->toBeNull();
+    expect($user?->roles->count())->toBe(0);
+});
+
+test('roles must be existing role names', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    actingAs($superAdmin)
+        ->post(route('users.store'), [
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'phone' => '+39 333 8888888',
+            'email' => 'ghost@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'roles' => ['nonexistent-role'],
+        ])
+        ->assertSessionHasErrors('roles.0');
+
+    assertDatabaseMissing('users', ['email' => 'ghost@example.com']);
+});
+
 // ROLE ASSIGNMENT EDGE CASES
 test('user can be assigned multiple roles', function () {
     $superAdmin = User::factory()->create();

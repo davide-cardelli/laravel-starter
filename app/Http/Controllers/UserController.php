@@ -85,14 +85,13 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request, CreateUser $createUser): RedirectResponse
     {
-        $user = $createUser->execute($request->validated());
+        // Assigning roles requires its own permission: creating users alone must never grant it.
+        abort_if($request->has('roles') && ! $request->user()?->can('assign roles'), 403);
 
-        // Assign roles if provided
-        if ($request->has('roles')) {
-            /** @var array<string> $roles */
-            $roles = $request->input('roles', []);
-            $user->syncRoles($roles);
-        }
+        /** @var array<int, string>|null $roles */
+        $roles = $request->validated('roles');
+
+        $createUser->execute($request->validated(), $roles);
 
         return redirect()
             ->route('users.index')
@@ -141,14 +140,13 @@ class UserController extends Controller
         User $user,
         UpdateUser $updateUser
     ): RedirectResponse {
-        $updateUser->execute($user, $request->validated());
+        // Changing roles requires its own permission: editing users alone must never grant it.
+        abort_if($request->has('roles') && ! $request->user()?->can('assign roles'), 403);
 
-        // Sync roles if provided
-        if ($request->has('roles')) {
-            /** @var array<string> $roles */
-            $roles = $request->input('roles', []);
-            $user->syncRoles($roles);
-        }
+        /** @var array<int, string>|null $roles */
+        $roles = $request->validated('roles');
+
+        $updateUser->execute($user, $request->validated(), $roles);
 
         return redirect()
             ->route('users.index')
