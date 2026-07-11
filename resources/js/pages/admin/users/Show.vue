@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCan } from '@/composables/useCan';
 import { useToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
 import { assignRole, index, removeRole } from '@/routes/users';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link, useHttp } from '@inertiajs/vue3';
@@ -117,7 +118,7 @@ const remove = (role: Role) => {
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Dashboard', href: dashboard().url },
     { title: 'Users', href: index().url },
     { title: props.user.name },
 ];
