@@ -50,18 +50,19 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Create Roles and Assign Permissions
+        // Create Roles and sync their Permissions. firstOrCreate + syncPermissions
+        // keep this seeder idempotent, so `composer setup` stays re-runnable.
 
         // Super Admin - has ALL permissions
-        $superAdmin = Role::create(['name' => 'super-admin']);
-        $superAdmin->givePermissionTo(Permission::all());
+        $superAdmin = Role::firstOrCreate(['name' => 'super-admin']);
+        $superAdmin->syncPermissions(Permission::all());
 
         // Admin - can manage users and content
-        $admin = Role::create(['name' => 'admin']);
-        $admin->givePermissionTo([
+        $admin = Role::firstOrCreate(['name' => 'admin']);
+        $admin->syncPermissions([
             'view users',
             'create users',
             'edit users',
@@ -77,8 +78,8 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         // Manager - can manage content but not users
-        $manager = Role::create(['name' => 'manager']);
-        $manager->givePermissionTo([
+        $manager = Role::firstOrCreate(['name' => 'manager']);
+        $manager->syncPermissions([
             'view users',
             'view content',
             'create content',
@@ -87,8 +88,8 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         // User - basic access
-        $user = Role::create(['name' => 'user']);
-        $user->givePermissionTo([
+        $user = Role::firstOrCreate(['name' => 'user']);
+        $user->syncPermissions([
             'view content',
         ]);
 

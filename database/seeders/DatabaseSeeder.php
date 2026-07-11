@@ -25,44 +25,30 @@ class DatabaseSeeder extends Seeder
         // Seed roles and permissions first
         $this->call(RolePermissionSeeder::class);
 
-        // Create demo users for each role
+        // Create demo users for each role. updateOrCreate (keyed on email) plus
+        // the idempotent assignRole keep this seeder safely re-runnable.
         $this->command->info('Creating demo users...');
 
-        $superAdmin = User::factory()->create([
-            'first_name' => 'Marco',
-            'last_name' => 'Rossi',
-            'phone' => '+39 333 1234567',
-            'email' => 'superadmin@example.com',
-            'password' => bcrypt('password'),
-        ]);
-        $superAdmin->assignRole('super-admin');
+        $demoUsers = [
+            ['Marco', 'Rossi', '+39 333 1234567', 'superadmin@example.com', 'super-admin'],
+            ['Giulia', 'Bianchi', '+39 334 2345678', 'admin@example.com', 'admin'],
+            ['Luca', 'Verdi', '+39 335 3456789', 'manager@example.com', 'manager'],
+            ['Sara', 'Neri', '+39 336 4567890', 'user@example.com', 'user'],
+        ];
 
-        $admin = User::factory()->create([
-            'first_name' => 'Giulia',
-            'last_name' => 'Bianchi',
-            'phone' => '+39 334 2345678',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password'),
-        ]);
-        $admin->assignRole('admin');
-
-        $manager = User::factory()->create([
-            'first_name' => 'Luca',
-            'last_name' => 'Verdi',
-            'phone' => '+39 335 3456789',
-            'email' => 'manager@example.com',
-            'password' => bcrypt('password'),
-        ]);
-        $manager->assignRole('manager');
-
-        $user = User::factory()->create([
-            'first_name' => 'Sara',
-            'last_name' => 'Neri',
-            'phone' => '+39 336 4567890',
-            'email' => 'user@example.com',
-            'password' => bcrypt('password'),
-        ]);
-        $user->assignRole('user');
+        foreach ($demoUsers as [$firstName, $lastName, $phone, $email, $role]) {
+            $user = User::updateOrCreate(
+                ['email' => $email],
+                [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'phone' => $phone,
+                    'password' => bcrypt('password'),
+                    'email_verified_at' => now(),
+                ],
+            );
+            $user->syncRoles([$role]);
+        }
 
         $this->command->info('✅ Demo users created successfully!');
         $this->command->newLine();
