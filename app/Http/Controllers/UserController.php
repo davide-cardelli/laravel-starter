@@ -12,9 +12,9 @@ use App\Actions\User\UpdateUser;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
@@ -22,23 +22,21 @@ use Spatie\Permission\Models\Role;
 /**
  * User Controller
  *
- * Manages CRUD operations for users with role-based authorization.
+ * Manages CRUD operations for users with role-based authorization
+ * declared via #[Authorize] attributes (policy-backed).
  * Uses Action-Based Architecture for business logic.
  */
 class UserController extends Controller
 {
-    use AuthorizesRequests;
-
     /**
      * Display a listing of users.
      *
      * Shows paginated user list with search/filter capabilities.
      * Includes roles for each user.
      */
+    #[Authorize('viewAny', User::class)]
     public function index(Request $request): Response
     {
-        $this->authorize('viewAny', User::class);
-
         $users = User::query()
             ->with('roles')
             ->when($request->input('search'), function ($query, $search) {
@@ -74,10 +72,9 @@ class UserController extends Controller
      *
      * Displays user creation form with available roles.
      */
+    #[Authorize('create', User::class)]
     public function create(): Response
     {
-        $this->authorize('create', User::class);
-
         $roles = Role::all();
 
         return Inertia::render('admin/users/Create', [
@@ -111,10 +108,9 @@ class UserController extends Controller
      *
      * Shows user details including roles and permissions.
      */
+    #[Authorize('view', 'user')]
     public function show(User $user): Response
     {
-        $this->authorize('view', $user);
-
         $user->load('roles.permissions');
 
         return Inertia::render('admin/users/Show', [
@@ -127,10 +123,9 @@ class UserController extends Controller
      *
      * Displays user edit form with current roles and available roles.
      */
+    #[Authorize('update', 'user')]
     public function edit(User $user): Response
     {
-        $this->authorize('update', $user);
-
         $user->load('roles');
         $roles = Role::all();
 
@@ -169,10 +164,9 @@ class UserController extends Controller
      *
      * Permanently deletes the user from the database.
      */
+    #[Authorize('delete', 'user')]
     public function destroy(User $user, DeleteUser $deleteUser): RedirectResponse
     {
-        $this->authorize('delete', $user);
-
         $deleteUser->execute($user);
 
         return redirect()
@@ -185,13 +179,12 @@ class UserController extends Controller
      *
      * Adds a specific role to the user's roles.
      */
+    #[Authorize('assignRole', User::class)]
     public function assignRole(
         User $user,
         Role $role,
         AssignRoleToUser $assignRoleToUser
     ): RedirectResponse {
-        $this->authorize('assignRole', User::class);
-
         $assignRoleToUser->execute($user, $role);
 
         return back()->with('success', "Role '{$role->name}' assigned successfully.");
@@ -202,13 +195,12 @@ class UserController extends Controller
      *
      * Removes a specific role from the user's roles.
      */
+    #[Authorize('removeRole', User::class)]
     public function removeRole(
         User $user,
         Role $role,
         RemoveRoleFromUser $removeRoleFromUser
     ): RedirectResponse {
-        $this->authorize('removeRole', User::class);
-
         $removeRoleFromUser->execute($user, $role);
 
         return back()->with('success', "Role '{$role->name}' removed successfully.");

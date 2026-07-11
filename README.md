@@ -308,8 +308,9 @@ Edit `database/seeders/RolePermissionSeeder.php` to customize for your applicati
     <button>Edit</button>
 @endcan
 
-// In controllers (via Policy)
-$this->authorize('update', $user);
+// In controllers (via Policy, using Laravel 13 attributes)
+#[Authorize('update', 'user')]
+public function edit(User $user): Response { /* ... */ }
 
 // In code
 if ($user->can('delete users')) {
