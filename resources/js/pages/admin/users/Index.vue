@@ -14,7 +14,7 @@ import {
 import { useCan } from '@/composables/useCan';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { create, destroy, edit, index, show } from '@/routes/users';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, Role } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
@@ -28,11 +28,6 @@ interface User {
     email: string;
     roles: Array<{ name: string }>;
     created_at: string;
-}
-
-interface Role {
-    id: number;
-    name: string;
 }
 
 interface PaginationLink {

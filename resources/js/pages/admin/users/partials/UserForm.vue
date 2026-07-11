@@ -5,14 +5,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCan } from '@/composables/useCan';
+import type { Role } from '@/types';
 import type { InertiaForm } from '@inertiajs/vue3';
 import { useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
-
-interface Role {
-    id: number;
-    name: string;
-}
 
 interface User {
     id: number;

@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import UserForm from '@/pages/admin/users/partials/UserForm.vue';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, Role } from '@/types';
 import type { InertiaForm } from '@inertiajs/vue3';
 import { Head, router } from '@inertiajs/vue3';
-
-interface Role {
-    id: number;
-    name: string;
-}
 
 interface User {
     id: number;

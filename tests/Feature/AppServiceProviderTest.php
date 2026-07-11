@@ -15,23 +15,14 @@ afterEach(function () {
     Password::defaults(fn () => Password::min(8));
 });
 
-test('secure session cookies are enforced in production', function () {
+test('secure session cookies are enforced in non-local environments', function (string $env) {
     config(['session.secure' => false]);
-    $this->app['env'] = 'production';
+    $this->app['env'] = $env;
 
     (new AppServiceProvider($this->app))->boot();
 
     expect(config('session.secure'))->toBeTrue();
-});
-
-test('secure session cookies are enforced in non-local environments like staging', function () {
-    config(['session.secure' => false]);
-    $this->app['env'] = 'staging';
-
-    (new AppServiceProvider($this->app))->boot();
-
-    expect(config('session.secure'))->toBeTrue();
-});
+})->with(['production', 'staging']);
 
 test('session cookie security is left to configuration outside production', function () {
     config(['session.secure' => false]);
