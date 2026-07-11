@@ -51,7 +51,13 @@ test('guest cannot view users list', function () {
 
 // SEARCH TESTS
 test('users can be searched', function (string $term, string $expectedEmail) {
-    $superAdmin = User::factory()->create();
+    // Fixed, non-matching identity so the acting user never collides with the
+    // search terms (a random factory user occasionally would, making it flaky).
+    $superAdmin = User::factory()->create([
+        'first_name' => 'Search',
+        'last_name' => 'Actor',
+        'email' => 'search.actor@example.test',
+    ]);
     $superAdmin->assignRole('super-admin');
 
     User::factory()->create([
@@ -81,7 +87,11 @@ test('users can be searched', function (string $term, string $expectedEmail) {
 ]);
 
 test('search combined with role filter only returns users matching both', function () {
-    $superAdmin = User::factory()->create();
+    $superAdmin = User::factory()->create([
+        'first_name' => 'Search',
+        'last_name' => 'Actor',
+        'email' => 'search.actor@example.test',
+    ]);
     $superAdmin->assignRole('super-admin');
 
     $marioAdmin = User::factory()->create([
