@@ -1,23 +1,11 @@
 <script setup lang="ts">
 import { useToast } from '@/composables/useToast';
-import type { AppPageProps } from '@/types';
-import { usePage } from '@inertiajs/vue3';
 import { CircleCheck, CircleX, X } from 'lucide-vue-next';
-import { watch } from 'vue';
 
-const page = usePage<AppPageProps>();
-const { toasts, dismiss, success, error } = useToast();
-
-// Session flash messages become toasts on every Inertia visit; other
-// consumers (e.g. XHR calls via useHttp) push through useToast directly.
-watch(
-    () => page.props.flash,
-    (flash) => {
-        if (flash?.success) success(flash.success);
-        if (flash?.error) error(flash.error);
-    },
-    { immediate: true },
-);
+// Flash-to-toast wiring lives in app.ts (router "success" event). This
+// component only renders the shared toast stack, so it is safe to remount
+// per page visit without replaying messages.
+const { toasts, dismiss } = useToast();
 </script>
 
 <template>
