@@ -131,7 +131,10 @@ test('super admin can view the user detail page', function () {
             ->component('admin/users/Show')
             ->where('user.id', $targetUser->id)
             ->has('user.roles', 1)
-            ->has('roles', 4));
+            ->has('roles', 4)
+            // The "Permissions via roles" card derives from each role's
+            // permissions, so they must be eager-loaded into the props.
+            ->has('roles.0.permissions'));
 });
 
 test('regular user cannot view the user detail page', function () {

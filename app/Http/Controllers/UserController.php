@@ -112,7 +112,7 @@ class UserController extends Controller
 
         return Inertia::render('admin/users/Show', [
             'user' => $user,
-            'roles' => Role::all(),
+            'roles' => Role::with('permissions')->get(),
         ]);
     }
 
