@@ -342,21 +342,25 @@ php artisan pail        # View logs
 npm run dev             # Start Vite
 ```
 
-### Git Hooks (Automatic)
+### Git Hooks (Versioned)
 
-**Pre-commit:**
-- ✅ Formats PHP with Laravel Pint
-- ✅ Formats TS/Vue with Prettier
-- ✅ Builds frontend to catch compile errors
+Hooks live in `.githooks/` (tracked in the repository) and are activated by
+`composer setup` — or manually with `git config core.hooksPath .githooks`.
 
-**Pre-push:**
+**Pre-commit** (fast):
+- ✅ Formats the staged PHP files with Laravel Pint
+- ✅ Formats the staged TS/Vue/CSS files with Prettier
+- Only staged files are touched — the rest of your working tree is never modified
+
+**Pre-push** (full gate, mirrors CI):
 - ✅ TypeScript type checking
 - ✅ ESLint validation
 - ✅ PHPStan Level 9 analysis
 - ✅ Deptrac architecture validation
-- ✅ Full test suite (Pest)
+- ✅ Full test suite (auto-detects Sail)
+- ✅ Production build
 
-Hooks are installed automatically via Composer and **enforce quality standards** before code enters the repository.
+Run the same gate manually anytime with `composer check`.
 
 ---
 

@@ -58,7 +58,15 @@
             "npm install",
             "@php artisan wayfinder:generate --with-form",
             "npm run build",
+            "git config core.hooksPath .githooks || true",
             "@php -r \"echo PHP_EOL.'Setup complete! Demo login: superadmin@example.com / password'.PHP_EOL;\""
+        ],
+        "check": [
+            "@format:test",
+            "@analyse",
+            "@deptrac",
+            "npm run check",
+            "@test"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",

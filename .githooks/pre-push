@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+# Pre-push hook: full quality gate before anything leaves the machine.
+# Mirrors the CI pipeline. Activated via: git config core.hooksPath .githooks
+
+set -e
+
+echo ""
+echo "🔍 Running pre-push quality checks..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+fail() {
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "❌ $1"
+    echo "   Fix with: $2"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    exit 1
+}
+
+echo "🔷 [1/6] TypeScript type checking..."
+npm run type-check --silent || fail "TypeScript type errors found!" "npm run type-check"
+echo "   ✅ TypeScript: No errors"
+
+echo "🔷 [2/6] Running ESLint..."
+npm run lint:check --silent || fail "ESLint errors found!" "npm run lint"
+echo "   ✅ ESLint: No errors"
+
+echo "📊 [3/6] Running PHPStan Level 9..."
+composer analyse --quiet || fail "PHPStan found type errors!" "composer analyse"
+echo "   ✅ PHPStan: No errors"
+
+echo "🏗️  [4/6] Validating architecture (Deptrac)..."
+composer deptrac --quiet || fail "Deptrac found architecture violations!" "composer deptrac"
+echo "   ✅ Deptrac: No violations"
+
+echo "🧪 [5/6] Running Pest tests..."
+# The suite talks to PostgreSQL: run it inside Sail when available.
+TEST_RUNNER="composer test"
+if [ -x vendor/bin/sail ] && docker ps --format '{{.Names}}' 2>/dev/null | grep -q 'laravel.test'; then
+    TEST_RUNNER="vendor/bin/sail composer test"
+fi
+$TEST_RUNNER --quiet || fail "Tests failed!" "$TEST_RUNNER"
+echo "   ✅ Tests: All passing"
+
+echo "🏗️  [6/6] Building frontend..."
+npm run build --silent || fail "Build failed!" "npm run build"
+echo "   ✅ Build: Successful"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ All quality checks passed! Pushing..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+exit 0

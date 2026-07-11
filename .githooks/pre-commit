@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# Pre-commit hook: format ONLY the staged files, then re-stage them.
+# Fast by design — no builds and no tests here; those run on pre-push.
+# Activated via: git config core.hooksPath .githooks (done by composer setup)
+
+set -e
+
+STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACMR -- '*.php')
+STAGED_FRONTEND=$(git diff --cached --name-only --diff-filter=ACMR -- 'resources/*.ts' 'resources/**/*.ts' 'resources/**/*.vue' 'resources/**/*.css' 'resources/**/*.js')
+
+if [ -z "$STAGED_PHP" ] && [ -z "$STAGED_FRONTEND" ]; then
+    exit 0
+fi
+
+echo ""
+echo "🎨 Pre-commit: formatting staged files..."
+
+if [ -n "$STAGED_PHP" ]; then
+    ./vendor/bin/pint --quiet $STAGED_PHP
+    git add $STAGED_PHP
+    echo "   ✅ Pint: $(echo "$STAGED_PHP" | wc -l | tr -d ' ') PHP file(s) formatted"
+fi
+
+if [ -n "$STAGED_FRONTEND" ]; then
+    npx prettier --write --log-level silent $STAGED_FRONTEND
+    git add $STAGED_FRONTEND
+    echo "   ✅ Prettier: $(echo "$STAGED_FRONTEND" | wc -l | tr -d ' ') file(s) formatted"
+fi
+
+echo "✅ Pre-commit done"
+echo ""
+
+exit 0
