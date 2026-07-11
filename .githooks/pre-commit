@@ -1,34 +1,49 @@
 #!/usr/bin/env bash
 
-# Pre-commit hook: format ONLY the staged files, then re-stage them.
-# Fast by design — no builds and no tests here; those run on pre-push.
-# Activated via: git config core.hooksPath .githooks (done by composer setup)
+# Pre-commit hook: VERIFY formatting of the staged files without mutating them.
+# It never re-stages, so partially-staged files keep their unstaged hunks out of
+# the commit. If something is not formatted, the commit aborts with guidance —
+# run the formatter yourself and re-stage. Activated by composer setup via:
+# git config core.hooksPath .githooks
 
-set -e
+set -euo pipefail
 
-STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACMR -- '*.php')
-STAGED_FRONTEND=$(git diff --cached --name-only --diff-filter=ACMR -- 'resources/*.ts' 'resources/**/*.ts' 'resources/**/*.vue' 'resources/**/*.css' 'resources/**/*.js')
+# Collect staged (added/copied/modified/renamed) files, NUL-delimited so paths
+# with spaces survive. Partition them by what tool should check them.
+php_files=()
+fe_files=()
+while IFS= read -r -d '' file; do
+    case "$file" in
+        *.php)
+            php_files+=("$file")
+            ;;
+        resources/*.ts | resources/*.vue | resources/*.css | resources/*.js)
+            fe_files+=("$file")
+            ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
 
-if [ -z "$STAGED_PHP" ] && [ -z "$STAGED_FRONTEND" ]; then
-    exit 0
+status=0
+
+if [ ${#php_files[@]} -gt 0 ]; then
+    if ! ./vendor/bin/pint --test "${php_files[@]}" >/dev/null 2>&1; then
+        echo "❌ Pint: staged PHP files need formatting."
+        echo "   Fix with: composer format && git add <files>"
+        status=1
+    fi
 fi
 
-echo ""
-echo "🎨 Pre-commit: formatting staged files..."
-
-if [ -n "$STAGED_PHP" ]; then
-    ./vendor/bin/pint --quiet $STAGED_PHP
-    git add $STAGED_PHP
-    echo "   ✅ Pint: $(echo "$STAGED_PHP" | wc -l | tr -d ' ') PHP file(s) formatted"
+if [ ${#fe_files[@]} -gt 0 ]; then
+    if ! npx prettier --check "${fe_files[@]}" >/dev/null 2>&1; then
+        echo "❌ Prettier: staged frontend files need formatting."
+        echo "   Fix with: npm run format && git add <files>"
+        status=1
+    fi
 fi
 
-if [ -n "$STAGED_FRONTEND" ]; then
-    npx prettier --write --log-level silent $STAGED_FRONTEND
-    git add $STAGED_FRONTEND
-    echo "   ✅ Prettier: $(echo "$STAGED_FRONTEND" | wc -l | tr -d ' ') file(s) formatted"
+if [ "$status" -ne 0 ]; then
+    echo "Pre-commit aborted — your working tree was left untouched."
+    exit 1
 fi
-
-echo "✅ Pre-commit done"
-echo ""
 
 exit 0

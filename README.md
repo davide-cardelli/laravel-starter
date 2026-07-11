@@ -349,9 +349,10 @@ Hooks live in `.githooks/` (tracked in the repository) and are activated by
 `composer setup` — or manually with `git config core.hooksPath .githooks`.
 
 **Pre-commit** (fast):
-- ✅ Formats the staged PHP files with Laravel Pint
-- ✅ Formats the staged TS/Vue/CSS files with Prettier
-- Only staged files are touched — the rest of your working tree is never modified
+- ✅ Checks the staged PHP files with Laravel Pint (`--test`)
+- ✅ Checks the staged TS/Vue/CSS files with Prettier (`--check`)
+- Aborts with guidance if anything needs formatting — it never edits or re-stages
+  files, so partially-staged work is never silently pulled into the commit
 
 **Pre-push** (full gate, mirrors CI):
 - ✅ TypeScript type checking
