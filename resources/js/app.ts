@@ -10,9 +10,12 @@ import type { AppPageProps } from './types';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-// Surface server flash messages as toasts. Registered once here on the real
-// Inertia "success" visit event: history restores (back/forward) re-inject the
-// cached props but do NOT fire "success", so stale flash is never replayed.
+// Surface server flash messages as toasts. Registered once here on the Inertia
+// "success" visit event, which — unlike a history restore (back/forward) — does
+// fire, so stale flash is not replayed when navigating through history. Note:
+// a partial reload (router.reload({ only: [...] })) that omits `flash` would
+// merge the previous flash and re-toast it; introduce a per-visit guard here if
+// such reloads are ever added.
 router.on('success', (event) => {
     const flash = (event.detail.page.props as AppPageProps).flash;
     const { success, error } = useToast();
