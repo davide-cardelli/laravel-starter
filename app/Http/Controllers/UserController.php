@@ -148,7 +148,8 @@ class UserController extends Controller
         // because the edit form always resubmits the existing role set.
         /** @var array<int, string>|null $submittedRoles */
         $submittedRoles = $request->validated('roles');
-        $currentRoles = array_values(array_filter($user->getRoleNames()->all(), 'is_string'));
+        /** @var array<int, string> $currentRoles */
+        $currentRoles = $user->getRoleNames()->all();
         $roles = $this->authorizeRoleChange($request, $currentRoles, $submittedRoles);
 
         $updateUser->execute($user, $request->validated(), $roles);
