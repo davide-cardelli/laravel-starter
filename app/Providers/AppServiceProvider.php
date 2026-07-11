@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -31,10 +29,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Refuse migrate:fresh, db:wipe and similar commands in production.
         DB::prohibitDestructiveCommands($this->app->isProduction());
-
-        // Immutable dates cannot be mutated in place by accident when the
-        // same instance is shared across the codebase.
-        Date::use(CarbonImmutable::class);
 
         if ($this->app->isProduction()) {
             // Behind a TLS-terminating proxy the framework would otherwise
