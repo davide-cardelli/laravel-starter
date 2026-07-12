@@ -91,3 +91,28 @@ it('rolls back the optimistic badge when the assignment fails', function () {
 
     expect($target->fresh()->hasRole('manager'))->toBeFalse();
 });
+
+it('deletes a user only after confirming in the accessible dialog', function () {
+    actingAsSuperAdmin();
+
+    $target = User::factory()->withoutTwoFactor()->create([
+        'email' => 'deletable@example.test',
+    ]);
+    $deleteButton = '[data-test="delete-user-'.$target->getKey().'"]';
+
+    $page = visit('/admin/users')->assertSee('deletable@example.test');
+
+    // Cancelling the dialog must keep the user.
+    $page->click($deleteButton)
+        ->assertSee('Delete user')
+        ->click('[data-test="confirm-dialog-cancel"]');
+
+    expect(User::whereKey($target->getKey())->exists())->toBeTrue();
+
+    // Confirming deletes the user.
+    $page->click($deleteButton)
+        ->click('[data-test="confirm-dialog-confirm"]')
+        ->assertDontSee('deletable@example.test');
+
+    expect(User::whereKey($target->getKey())->exists())->toBeFalse();
+});

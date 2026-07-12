@@ -12,6 +12,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useCan } from '@/composables/useCan';
+import { useConfirm } from '@/composables/useConfirm';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { create, destroy, edit, index, show } from '@/routes/users';
 import type { BreadcrumbItem, Role } from '@/types';
@@ -67,9 +68,17 @@ const performSearch = () => {
     );
 };
 
-const deleteUser = (userId: number) => {
-    if (confirm('Are you sure you want to delete this user?')) {
-        router.delete(destroy(userId).url);
+const { confirm } = useConfirm();
+
+const deleteUser = async (user: User) => {
+    const confirmed = await confirm({
+        title: 'Delete user',
+        description: `Delete ${user.name}? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+    });
+
+    if (confirmed) {
+        router.delete(destroy(user.id).url);
     }
 };
 
@@ -171,7 +180,11 @@ const breadcrumbs: BreadcrumbItem[] = [
                                         v-if="canEditUsers"
                                         :href="edit(user.id)"
                                     >
-                                        <Button variant="ghost" size="sm">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            :aria-label="`Edit ${user.name}`"
+                                        >
                                             <Pencil class="h-4 w-4" />
                                         </Button>
                                     </Link>
@@ -179,7 +192,9 @@ const breadcrumbs: BreadcrumbItem[] = [
                                         v-if="canDeleteUsers"
                                         variant="ghost"
                                         size="sm"
-                                        @click="deleteUser(user.id)"
+                                        :aria-label="`Delete ${user.name}`"
+                                        :data-test="`delete-user-${user.id}`"
+                                        @click="deleteUser(user)"
                                     >
                                         <Trash2 class="h-4 w-4" />
                                     </Button>
