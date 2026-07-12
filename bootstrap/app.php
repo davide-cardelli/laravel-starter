@@ -37,9 +37,17 @@ return Application::configure(basePath: dirname(__DIR__))
             $status = $response->getStatusCode();
 
             if (in_array($status, [403, 404, 500, 503], true)) {
-                return Inertia::render('errors/Error', ['status' => $status])
-                    ->toResponse($request)
-                    ->setStatusCode($status);
+                try {
+                    return Inertia::render('errors/Error', ['status' => $status])
+                        ->toResponse($request)
+                        ->setStatusCode($status);
+                } catch (Throwable) {
+                    // Rendering the Inertia page runs HandleInertiaRequests::share(),
+                    // which hits the database. During an infrastructure outage that
+                    // throws again, so fall back to a static view — never mask the
+                    // error with an unhandled exception.
+                    return response()->view('errors.fallback', ['status' => $status], $status);
+                }
             }
 
             // A 419 means the CSRF token / session expired: surface it through

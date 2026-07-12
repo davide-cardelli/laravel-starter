@@ -31,6 +31,10 @@ let resolver: ((value: boolean) => void) | null = null;
  * Open an accessible confirmation dialog and resolve to the user's choice.
  */
 function confirm(options: ConfirmOptions): Promise<boolean> {
+    // Settle any still-pending confirmation as cancelled before replacing it, so
+    // a concurrent confirm() never strands the previous caller's promise.
+    resolver?.(false);
+
     state.value = {
         open: true,
         title: options.title,

@@ -93,11 +93,16 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($throttleKey);
         });
 
-        // Registration is throttled per IP: it takes no target email.
+        // Registration is throttled per source IP. A brand-new sign-up has no
+        // prior identity to key on, and keying by the submitted email would let a
+        // single host mass-create accounts under different addresses — so IP is
+        // the right (if coarse) signal here; users behind a shared NAT share the
+        // budget. `ip()` is effectively always non-null (the remote address).
         RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by((string) $request->ip()));
 
-        // Password-reset requests are throttled per email+IP (like login), so a
-        // single address cannot be flooded with reset emails.
+        // Password-reset requests are throttled per email+IP: a single source can
+        // send at most 5/min for a given address. This caps abuse per source but
+        // does not, by itself, make an address flood-proof against many IPs.
         RateLimiter::for('password-reset', function (Request $request) {
             $emailInput = $request->input('email', '');
             $email = is_string($emailInput) ? $emailInput : '';
