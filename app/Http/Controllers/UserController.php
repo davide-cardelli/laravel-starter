@@ -9,6 +9,7 @@ use App\Actions\User\CreateUser;
 use App\Actions\User\DeleteUser;
 use App\Actions\User\RemoveRoleFromUser;
 use App\Actions\User\UpdateUser;
+use App\Enums\Permission;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
@@ -178,7 +179,7 @@ class UserController extends Controller
             return null;
         }
 
-        $canAssign = $request->user()?->can('assign roles') ?? false;
+        $canAssign = $request->user()?->can(Permission::AssignRoles->value) ?? false;
 
         $changed = collect($submitted)->sort()->values()->all()
             !== collect($current)->sort()->values()->all();

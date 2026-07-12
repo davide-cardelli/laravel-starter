@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
@@ -7,6 +9,7 @@ use App\Actions\Fortify\ResetUserPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -88,6 +91,35 @@ class FortifyServiceProvider extends ServiceProvider
             $throttleKey = Str::transliterate(Str::lower($email).'|'.$request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
+        });
+
+        // Registration is throttled per source IP. A brand-new sign-up has no
+        // prior identity to key on, and keying by the submitted email would let a
+        // single host mass-create accounts under different addresses — so IP is
+        // the right (if coarse) signal here; users behind a shared NAT share the
+        // budget. `ip()` is effectively always non-null (the remote address).
+        RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by((string) $request->ip()));
+
+        // Password-reset requests are throttled per email+IP: a single source can
+        // send at most 5/min for a given address. This caps abuse per source but
+        // does not, by itself, make an address flood-proof against many IPs.
+        RateLimiter::for('password-reset', function (Request $request) {
+            $emailInput = $request->input('email', '');
+            $email = is_string($emailInput) ? $emailInput : '';
+
+            return Limit::perMinute(5)->by(Str::transliterate(Str::lower($email).'|'.$request->ip()));
+        });
+
+        // Fortify wires limiters for login/two-factor from config, but not for
+        // register / forgot-password. Its routes are registered late (in a
+        // booted callback), so attach the throttle from a nested booted
+        // callback, which runs once those routes exist.
+        $this->app->booted(function () {
+            $this->app->booted(function () {
+                $routes = Route::getRoutes();
+                $routes->getByName('register.store')?->middleware('throttle:register');
+                $routes->getByName('password.email')?->middleware('throttle:password-reset');
+            });
         });
     }
 }

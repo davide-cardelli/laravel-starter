@@ -48,37 +48,54 @@ deptrac:
         - type: directory
           value: app/Http/Middleware/.*
 
-  ruleset:
-    # Models: Can depend on NOTHING (pure domain)
-    Models: []
+    # Enums: Domain Primitives - backed enums shared across layers (leaf: depends
+    # on NOTHING outside itself). Modelling this as its own layer lets every other
+    # layer reference the shared vocabulary without loosening any existing rule.
+    - name: Enums
+      collectors:
+        - type: directory
+          value: app/Enums/.*
 
-    # Policies: Can use Models ONLY (authorization rules)
+  ruleset:
+    # Enums: Domain primitives - depend on NOTHING (true leaf)
+    Enums: []
+
+    # Models: Pure domain - may only use Enums (domain primitives)
+    Models:
+      - Enums
+
+    # Policies: Can use Models and Enums (authorization rules)
     Policies:
       - Models
+      - Enums
 
-    # Actions: Can use Models ONLY (business logic isolation)
+    # Actions: Can use Models and Enums (business logic isolation)
     Actions:
       - Models
+      - Enums
 
-    # Controllers: Can use Actions, Models, Requests, Policies (thin orchestration)
+    # Controllers: Can use Actions, Models, Requests, Policies, Enums (thin orchestration)
     Controllers:
       - Actions
       - Models
       - Requests
       - Policies
+      - Enums
 
-    # Requests: Can use Models (for validation rules)
+    # Requests: Can use Models and Enums (for validation rules)
     Requests:
       - Models
+      - Enums
 
     # Jobs: Can use Actions and Models (background processing)
     Jobs:
       - Actions
       - Models
 
-    # Middleware: Can use Models (for auth, permissions)
+    # Middleware: Can use Models and Enums (for auth, permissions)
     Middleware:
       - Models
+      - Enums
 
   formatters:
     graphviz:

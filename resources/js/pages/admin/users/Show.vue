@@ -195,6 +195,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                         >
                             <select
                                 v-model="selectedRoleId"
+                                data-test="assign-role-select"
                                 class="flex-1 rounded-md border px-3 py-1 text-sm"
                             >
                                 <option value="" disabled>
@@ -210,6 +211,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                             </select>
                             <Button
                                 size="sm"
+                                data-test="assign-role-button"
                                 :disabled="
                                     selectedRoleId === '' || http.processing
                                 "

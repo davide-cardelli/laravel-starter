@@ -21,6 +21,53 @@
 
 ---
 
+## 🆚 What this adds over the official starter kit
+
+Laravel's official [`laravel/vue-starter-kit`](https://github.com/laravel/vue-starter-kit) gives you auth, a dashboard, and settings on Inertia + Vue. This template starts there and adds an opinionated, **enforced** foundation. Every row is verifiable in this repository:
+
+| Capability | Official Vue starter kit | This template |
+| --- | :---: | --- |
+| Auth + 2FA (Fortify) | ✅ | ✅ |
+| Roles & permissions (spatie) | ❌ | ✅ real, with admin user-management CRUD |
+| Type-safe role/permission enums | ❌ | ✅ `App\Enums\Role` / `Permission` |
+| Action-Based Architecture | ❌ | ✅ enforced by Deptrac |
+| Static analysis | ❌ | ✅ PHPStan **level 9**, no baseline |
+| Architecture tests | ❌ | ✅ Pest `arch()` — strict types, layer rules |
+| Browser e2e tests | ❌ | ✅ Pest 4 browser testing (Playwright) |
+| Rate-limited auth + error pages | partial | ✅ register/forgot throttled, Inertia 403/404/500/503 |
+| Accessible confirm dialog / a11y | ❌ | ✅ reka-ui alert-dialog, aria labels |
+| Agent-ready | ❌ | ✅ `AGENTS.md` + Laravel Boost |
+| CI | basic | ✅ one workflow, PHP matrix, coverage ≥ 80% enforced |
+
+## 🚫 What this is NOT
+
+This is a **curated foundation**, not a SaaS boilerplate. By design it does **not** include:
+
+- **Billing / subscriptions** — no Cashier, no payment flows.
+- **Teams / multi-tenancy** — single-tenant user management only.
+- **Code generators** — no `make:crud`; you copy the documented Action / Policy / Request pattern instead (see "Adding New Features").
+- **A grab-bag of features** — every addition must earn its place and stay covered by tests and static analysis.
+
+Need those? Add them deliberately on top of this base — the architecture is designed to absorb them cleanly.
+
+## 📸 Screenshots
+
+**User management** — roles as badges, permission-gated actions, searchable list:
+
+![User management](docs/screenshots/users-index.png)
+
+**User detail** — inline role assignment/removal with optimistic UI (Inertia `useHttp`) and permissions derived from roles:
+
+![User detail with inline role management](docs/screenshots/user-show.png)
+
+**Login** — Laravel Fortify authentication with two-factor support:
+
+![Login](docs/screenshots/login.png)
+
+_Captured from the seeded demo app; run `composer setup` and sign in with the demo accounts (below) to explore these flows yourself._
+
+---
+
 ## ✨ Features
 
 ### Core Stack
@@ -39,7 +86,7 @@
 - **Laravel Pint** - Consistent PHP code style (PSR-12)
 - **ESLint + Prettier** - TypeScript/Vue code formatting
 - **Git Hooks** - Pre-commit formatting, pre-push quality checks
-- **Comprehensive Test Suite** - Feature and unit coverage with Pest
+- **Comprehensive Test Suite** - Unit, feature, and browser e2e tests with Pest 4; coverage enforced at ≥ 80% in CI
 
 ### Frontend Stack
 - **Vite** - Lightning-fast hot module replacement
@@ -209,13 +256,14 @@ app/
 ### Architecture Rules (Enforced by Deptrac)
 
 ```yaml
-Models      → (no dependencies)
-Policies    → Models only
-Actions     → Models only
-Controllers → Actions, Models, Requests, Policies
-Requests    → Models only
+Enums       → (no dependencies — leaf domain primitives)
+Models      → Enums
+Policies    → Models, Enums
+Actions     → Models, Enums
+Controllers → Actions, Models, Requests, Policies, Enums
+Requests    → Models, Enums
 Jobs        → Actions, Models
-Middleware  → Models only
+Middleware  → Models, Enums
 ```
 
 **Validate compliance:**
@@ -486,14 +534,22 @@ composer test:profile
 **Test Structure:**
 ```
 tests/
+├── Browser/           # Pest 4 browser e2e (Playwright, Sail-only)
 ├── Feature/           # Integration tests
-│   ├── Auth/         # Authentication flows
+│   ├── Auth/         # Authentication + real 2FA (TOTP, recovery, throttle)
 │   ├── Settings/     # User settings
+│   ├── ErrorPagesTest.php
 │   └── UserManagementTest.php
 └── Unit/              # Isolated unit tests
     ├── Actions/      # Action classes
+    ├── Enums/        # Role/permission enums
+    ├── ArchTest.php  # Architecture rules (strict types, layer boundaries)
     └── Policies/     # Authorization rules
 ```
+
+**Notes:**
+- Line coverage is enforced at **≥ 80%** in CI (`composer test:coverage`, non-browser suites); it currently sits well above that.
+- Browser tests drive a real headless browser via Playwright and run **inside Sail** (`composer test:browser`); `composer setup` installs the browser for you.
 
 ---
 

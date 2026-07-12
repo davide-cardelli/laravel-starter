@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Enums\Permission;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 use function Pest\Laravel\actingAs;
@@ -12,26 +13,15 @@ use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 
 beforeEach(function () {
-    // Create permissions
-    Permission::create(['name' => 'view users']);
-    Permission::create(['name' => 'create users']);
-    Permission::create(['name' => 'edit users']);
-    Permission::create(['name' => 'delete users']);
-    Permission::create(['name' => 'assign roles']);
+    // Seed the production roles/permissions (single source of truth).
+    $this->seed(RolePermissionSeeder::class);
 
-    // Create roles
-    $superAdmin = Role::create(['name' => 'super-admin']);
-    $superAdmin->givePermissionTo(['view users', 'create users', 'edit users', 'delete users', 'assign roles']);
-
-    $admin = Role::create(['name' => 'admin']);
-    $admin->givePermissionTo(['view users', 'create users', 'edit users']);
-
-    // Persona that manages users but may NOT assign roles. Named explicitly so
-    // it does not imply the seeder's "admin" (which does hold 'assign roles').
-    $userManager = Role::create(['name' => 'user-manager']);
-    $userManager->givePermissionTo(['view users', 'create users', 'edit users', 'delete users']);
-
-    Role::create(['name' => 'user']);
+    // A persona that manages users but may NOT assign roles. The seeder has no
+    // such role, so define it explicitly: the escalation tests rely on it, and
+    // it must stay distinct from the seeder's "admin" (which does hold 'assign
+    // roles').
+    Role::create(['name' => 'user-manager'])
+        ->givePermissionTo(['view users', 'create users', 'edit users', 'delete users']);
 });
 
 // INDEX TESTS
@@ -141,7 +131,8 @@ test('super admin can view the user detail page', function () {
             ->component('admin/users/Show')
             ->where('user.id', $targetUser->id)
             ->has('user.roles', 1)
-            ->has('roles', 4)
+            // super-admin, admin, manager, user (seeded) + user-manager (test).
+            ->has('roles', 5)
             // The "Permissions via roles" card derives from each role's
             // permissions, so they must be eager-loaded into the props.
             ->has('roles.0.permissions'));
@@ -208,17 +199,34 @@ test('shared auth props include the user permissions', function () {
     actingAs($superAdmin)
         ->get(route('users.index'))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('auth.permissions', 5)
-            ->where('auth.permissions', fn ($permissions) => collect($permissions)->contains('assign roles')));
+            // Super-admin is shared exactly every permission that exists — any
+            // under- or over-sharing regression is caught.
+            ->where('auth.permissions', fn ($permissions) => collect($permissions)->sort()->values()->all()
+                === collect(Permission::values())->sort()->values()->all()));
 });
 
-test('shared permissions are empty for users without permissions', function () {
-    $user = User::factory()->create();
-    $user->assignRole('user');
+test('shared permissions for a base user are exactly its own', function () {
+    $user = User::factory()->withRole('user')->create();
 
     actingAs($user)
         ->get(route('dashboard'))
-        ->assertInertia(fn (Assert $page) => $page->has('auth.permissions', 0));
+        // The base 'user' role holds only 'view content'. Asserting the exact set
+        // (not just the absence of two names) catches any leaked admin permission.
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('auth.permissions', fn ($permissions) => collect($permissions)->sort()->values()->all() === ['view content']));
+});
+
+test('the user list includes each user full name for the detail-page link', function () {
+    $superAdmin = User::factory()->withoutTwoFactor()->withRole('super-admin')->create([
+        'first_name' => 'Ada',
+        'last_name' => 'Lovelace',
+    ]);
+
+    // The name column links to the detail page, so an absent 'name' (accessor not
+    // appended) would render an empty, unclickable link.
+    actingAs($superAdmin)
+        ->get(route('users.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('users.data.0.name', 'Ada Lovelace'));
 });
 
 // CREATE TESTS

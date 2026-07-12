@@ -154,7 +154,11 @@ const cancel = () => {
         </div>
 
         <div class="flex gap-2">
-            <Button type="submit" :disabled="form.processing">
+            <Button
+                type="submit"
+                data-test="submit-user-form"
+                :disabled="form.processing"
+            >
                 {{ isEdit ? 'Update User' : 'Create User' }}
             </Button>
             <Button type="button" variant="outline" @click="cancel">

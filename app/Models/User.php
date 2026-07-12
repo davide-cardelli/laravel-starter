@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -42,6 +44,19 @@ class User extends Authenticatable
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * Without this, the computed full name is absent when a user is serialized
+     * in a collection (e.g. the paginated users list), leaving the name column
+     * and its link to the detail page empty.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'name',
     ];
 
     /**

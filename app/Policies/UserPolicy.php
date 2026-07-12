@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Models\User;
 
 /**
@@ -19,7 +20,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view users');
+        return $user->can(Permission::ViewUsers->value);
     }
 
     /**
@@ -27,7 +28,7 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        return $user->can('view users');
+        return $user->can(Permission::ViewUsers->value);
     }
 
     /**
@@ -35,7 +36,7 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create users');
+        return $user->can(Permission::CreateUsers->value);
     }
 
     /**
@@ -48,7 +49,7 @@ class UserPolicy
             return false;
         }
 
-        return $user->can('edit users');
+        return $user->can(Permission::EditUsers->value);
     }
 
     /**
@@ -61,7 +62,7 @@ class UserPolicy
             return false;
         }
 
-        return $user->can('delete users');
+        return $user->can(Permission::DeleteUsers->value);
     }
 
     /**
@@ -69,7 +70,7 @@ class UserPolicy
      */
     public function assignRole(User $user): bool
     {
-        return $user->can('assign roles');
+        return $user->can(Permission::AssignRoles->value);
     }
 
     /**
@@ -77,7 +78,7 @@ class UserPolicy
      */
     public function removeRole(User $user): bool
     {
-        return $user->can('assign roles'); // Same permission as assign
+        return $user->can(Permission::AssignRoles->value); // Same permission as assign
     }
 
     /**
@@ -85,7 +86,7 @@ class UserPolicy
      */
     public function restore(User $user, User $model): bool
     {
-        return $user->can('delete users');
+        return $user->can(Permission::DeleteUsers->value);
     }
 
     /**
@@ -93,6 +94,6 @@ class UserPolicy
      */
     public function forceDelete(User $user, User $model): bool
     {
-        return $user->can('delete users');
+        return $user->can(Permission::DeleteUsers->value);
     }
 }
