@@ -47,6 +47,19 @@ class User extends Authenticatable
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * Without this, the computed full name is absent when a user is serialized
+     * in a collection (e.g. the paginated users list), leaving the name column
+     * and its link to the detail page empty.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'name',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

@@ -216,6 +216,19 @@ test('shared permissions for a base user are exactly its own', function () {
             ->where('auth.permissions', fn ($permissions) => collect($permissions)->sort()->values()->all() === ['view content']));
 });
 
+test('the user list includes each user full name for the detail-page link', function () {
+    $superAdmin = User::factory()->withoutTwoFactor()->withRole('super-admin')->create([
+        'first_name' => 'Ada',
+        'last_name' => 'Lovelace',
+    ]);
+
+    // The name column links to the detail page, so an absent 'name' (accessor not
+    // appended) would render an empty, unclickable link.
+    actingAs($superAdmin)
+        ->get(route('users.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('users.data.0.name', 'Ada Lovelace'));
+});
+
 // CREATE TESTS
 test('super admin can create new user', function () {
     $superAdmin = User::factory()->create();
