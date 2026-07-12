@@ -2,16 +2,29 @@
 
 declare(strict_types=1);
 
+use App\Enums\Permission;
 use App\Models\User;
 use App\Policies\UserPolicy;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
+
+    // Persona holding every user-management permission EXCEPT assign roles. The
+    // negative assign/remove tests use it so they fail loudly if the policy ever
+    // checks the wrong user-management permission (e.g. edit users) instead of
+    // assign roles.
+    Role::create(['name' => 'user-manager'])->givePermissionTo([
+        Permission::ViewUsers->value,
+        Permission::CreateUsers->value,
+        Permission::EditUsers->value,
+        Permission::DeleteUsers->value,
+    ]);
 });
 
 // VIEW ANY TESTS
@@ -99,8 +112,8 @@ test('user with assign roles permission can assign roles', function () {
 });
 
 test('user without assign roles permission cannot assign roles', function () {
-    // 'manager' can view users but is not allowed to assign roles.
-    $user = User::factory()->withRole('manager')->create();
+    // Holds every user-management permission except assign roles.
+    $user = User::factory()->withRole('user-manager')->create();
 
     expect((new UserPolicy)->assignRole($user))->toBeFalse();
 });
@@ -113,7 +126,7 @@ test('user with assign roles permission can remove roles', function () {
 });
 
 test('user without assign roles permission cannot remove roles', function () {
-    $user = User::factory()->withRole('manager')->create();
+    $user = User::factory()->withRole('user-manager')->create();
 
     expect((new UserPolicy)->removeRole($user))->toBeFalse();
 });

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\Permission;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -198,19 +199,21 @@ test('shared auth props include the user permissions', function () {
     actingAs($superAdmin)
         ->get(route('users.index'))
         ->assertInertia(fn (Assert $page) => $page
-            // Assert the meaningful contents rather than a brittle exact count.
-            ->where('auth.permissions', fn ($permissions) => collect($permissions)->contains('assign roles')
-                && collect($permissions)->contains('view users')));
+            // Super-admin is shared exactly every permission that exists — any
+            // under- or over-sharing regression is caught.
+            ->where('auth.permissions', fn ($permissions) => collect($permissions)->sort()->values()->all()
+                === collect(Permission::values())->sort()->values()->all()));
 });
 
-test('shared permissions for a base user exclude admin permissions', function () {
+test('shared permissions for a base user are exactly its own', function () {
     $user = User::factory()->withRole('user')->create();
 
     actingAs($user)
         ->get(route('dashboard'))
+        // The base 'user' role holds only 'view content'. Asserting the exact set
+        // (not just the absence of two names) catches any leaked admin permission.
         ->assertInertia(fn (Assert $page) => $page
-            ->where('auth.permissions', fn ($permissions) => ! collect($permissions)->contains('view users')
-                && ! collect($permissions)->contains('assign roles')));
+            ->where('auth.permissions', fn ($permissions) => collect($permissions)->sort()->values()->all() === ['view content']));
 });
 
 // CREATE TESTS

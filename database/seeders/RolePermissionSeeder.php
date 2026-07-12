@@ -42,12 +42,18 @@ class RolePermissionSeeder extends Seeder
 
         foreach (RoleEnum::cases() as $roleCase) {
             $role = Role::firstOrCreate(['name' => $roleCase->value]);
-            $role->syncPermissions(
-                array_map(
+
+            // Super-admin holds every permission that exists — including any added
+            // outside the enum (a migration, a package, a downstream seeder) — so
+            // it stays omnipotent. Other roles get exactly their enum-declared set.
+            $permissions = $roleCase === RoleEnum::SuperAdmin
+                ? Permission::all()
+                : array_map(
                     fn (PermissionEnum $permission): string => $permission->value,
                     $roleCase->permissions(),
-                )
-            );
+                );
+
+            $role->syncPermissions($permissions);
 
             $summary[] = [$roleCase->value, $role->permissions->count()];
         }

@@ -3,20 +3,16 @@
 declare(strict_types=1);
 
 use App\Models\User;
-use Spatie\Permission\Models\Permission;
+use Database\Seeders\RolePermissionSeeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 use function Pest\Laravel\actingAs;
 
 beforeEach(function () {
-    foreach (['view users', 'create users', 'edit users', 'delete users', 'assign roles'] as $permission) {
-        Permission::create(['name' => $permission]);
-    }
-
-    Role::create(['name' => 'super-admin'])->givePermissionTo(Permission::all());
-    Role::create(['name' => 'manager']);
-    Role::create(['name' => 'user']);
+    // Seed the production roles/permissions (single source of truth) instead of
+    // hand-rolling a parallel set that could drift from the app.
+    $this->seed(RolePermissionSeeder::class);
 });
 
 /**
