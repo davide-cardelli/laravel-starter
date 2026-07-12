@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Enums\Permission as PermissionEnum;
+use App\Enums\Role as RoleEnum;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -13,8 +14,9 @@ use Spatie\Permission\PermissionRegistrar;
 /**
  * Role & Permission Seeder
  *
- * Seeds base roles and permissions for the application.
- * This is part of the reusable Laravel template.
+ * Seeds base roles and permissions for the application from the App\Enums
+ * definitions, which are the single source of truth. This is part of the
+ * reusable Laravel template.
  *
  * Run with: php artisan db:seed --class=RolePermissionSeeder
  */
@@ -28,80 +30,29 @@ class RolePermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create Permissions
-        $permissions = [
-            // User Management
-            'view users',
-            'create users',
-            'edit users',
-            'delete users',
-            'assign roles',
-
-            // Settings
-            'view settings',
-            'edit settings',
-
-            // Example: Content Management (customize for your app)
-            'view content',
-            'create content',
-            'edit content',
-            'delete content',
-            'publish content',
-        ];
-
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+        // Create every permission declared in the enum.
+        foreach (PermissionEnum::cases() as $permission) {
+            Permission::firstOrCreate(['name' => $permission->value]);
         }
 
-        // Create Roles and sync their Permissions. firstOrCreate + syncPermissions
-        // keep this seeder idempotent, so `composer setup` stays re-runnable.
+        // Create each role and sync the permissions it owns (defined on the enum).
+        // firstOrCreate + syncPermissions keep this seeder idempotent, so
+        // `composer setup` stays re-runnable.
+        $summary = [];
 
-        // Super Admin - has ALL permissions
-        $superAdmin = Role::firstOrCreate(['name' => 'super-admin']);
-        $superAdmin->syncPermissions(Permission::all());
+        foreach (RoleEnum::cases() as $roleCase) {
+            $role = Role::firstOrCreate(['name' => $roleCase->value]);
+            $role->syncPermissions(
+                array_map(
+                    fn (PermissionEnum $permission): string => $permission->value,
+                    $roleCase->permissions(),
+                )
+            );
 
-        // Admin - can manage users and content
-        $admin = Role::firstOrCreate(['name' => 'admin']);
-        $admin->syncPermissions([
-            'view users',
-            'create users',
-            'edit users',
-            'delete users',
-            'assign roles',
-            'view settings',
-            'edit settings',
-            'view content',
-            'create content',
-            'edit content',
-            'delete content',
-            'publish content',
-        ]);
-
-        // Manager - can manage content but not users
-        $manager = Role::firstOrCreate(['name' => 'manager']);
-        $manager->syncPermissions([
-            'view users',
-            'view content',
-            'create content',
-            'edit content',
-            'publish content',
-        ]);
-
-        // User - basic access
-        $user = Role::firstOrCreate(['name' => 'user']);
-        $user->syncPermissions([
-            'view content',
-        ]);
+            $summary[] = [$roleCase->value, $role->permissions->count()];
+        }
 
         $this->command->info('✅ Roles and permissions seeded successfully!');
-        $this->command->table(
-            ['Role', 'Permissions Count'],
-            [
-                ['super-admin', $superAdmin->permissions->count()],
-                ['admin', $admin->permissions->count()],
-                ['manager', $manager->permissions->count()],
-                ['user', $user->permissions->count()],
-            ]
-        );
+        $this->command->table(['Role', 'Permissions Count'], $summary);
     }
 }
