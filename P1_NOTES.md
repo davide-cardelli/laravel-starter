@@ -36,3 +36,11 @@ npm run build:assets
 Il pre-push hook builda già prima dei test; la CI ha un job `browser` dedicato che
 installa Playwright (`npx playwright install --with-deps chromium`) e builda gli
 asset prima di eseguire `composer test:browser`.
+
+## Rimandati
+
+- **Screenshot del README (Task 7)**: la sezione `## 📸 Screenshots` del README ha
+  i riferimenti pronti (commento HTML) per `docs/screenshots/{login,users-index,user-show}.png`.
+  Le immagini vanno catturate a mano dall'app seedata (`superadmin@example.com /
+  password`) con viewport/dati curati, poi scommentare i riferimenti. Non bloccante:
+  il riposizionamento testuale del README è completo.
