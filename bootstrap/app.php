@@ -41,11 +41,14 @@ return Application::configure(basePath: dirname(__DIR__))
                     return Inertia::render('errors/Error', ['status' => $status])
                         ->toResponse($request)
                         ->setStatusCode($status);
-                } catch (Throwable) {
+                } catch (Throwable $e) {
                     // Rendering the Inertia page runs HandleInertiaRequests::share(),
                     // which hits the database. During an infrastructure outage that
                     // throws again, so fall back to a static view — never mask the
-                    // error with an unhandled exception.
+                    // error with an unhandled exception. Still report it, so a
+                    // non-outage render regression leaves a log trail.
+                    report($e);
+
                     return response()->view('errors.fallback', ['status' => $status], $status);
                 }
             }
