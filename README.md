@@ -52,13 +52,19 @@ Need those? Add them deliberately on top of this base — the architecture is de
 
 ## 📸 Screenshots
 
-<!-- Curated screenshots go here, captured from the seeded demo app
-     (superadmin@example.com / password):
-     ![Login](docs/screenshots/login.png)
-     ![User management](docs/screenshots/users-index.png)
-     ![User detail with inline role management](docs/screenshots/user-show.png) -->
+**User management** — roles as badges, permission-gated actions, searchable list:
 
-_Run `composer setup` and sign in with the seeded demo accounts (below) to explore the login, user-management, and inline role-assignment flows._
+![User management](docs/screenshots/users-index.png)
+
+**User detail** — inline role assignment/removal with optimistic UI (Inertia `useHttp`) and permissions derived from roles:
+
+![User detail with inline role management](docs/screenshots/user-show.png)
+
+**Login** — Laravel Fortify authentication with two-factor support:
+
+![Login](docs/screenshots/login.png)
+
+_Captured from the seeded demo app; run `composer setup` and sign in with the demo accounts (below) to explore these flows yourself._
 
 ---
 
