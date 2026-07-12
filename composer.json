@@ -34,6 +34,7 @@
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^4.1",
+        "pestphp/pest-plugin-browser": "^4.3",
         "pestphp/pest-plugin-laravel": "^4.0",
         "phpstan/phpstan": "^2.1"
     },
@@ -56,6 +57,7 @@
             "@php artisan key:generate --ansi",
             "@php artisan migrate --seed --force --ansi",
             "npm install",
+            "npx playwright install chromium",
             "@php artisan wayfinder:generate --with-form",
             "npm run build",
             "git config core.hooksPath .githooks || true",
@@ -77,7 +79,8 @@
             "@php artisan test"
         ],
         "test:parallel": "vendor/bin/pest --parallel",
-        "test:coverage": "vendor/bin/pest --coverage --min=80",
+        "test:browser": "vendor/bin/pest --testsuite=Browser",
+        "test:coverage": "vendor/bin/pest --coverage --min=80 --testsuite=Unit,Feature",
         "test:profile": "vendor/bin/pest --profile",
         "analyse": "vendor/bin/phpstan analyse --memory-limit=512M",
         "analyse:baseline": "vendor/bin/phpstan analyse --generate-baseline",

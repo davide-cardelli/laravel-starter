@@ -34,19 +34,21 @@ echo "🏗️  [4/6] Validating architecture (Deptrac)..."
 composer deptrac --quiet || fail "Deptrac found architecture violations!" "composer deptrac"
 echo "   ✅ Deptrac: No violations"
 
-echo "🧪 [5/6] Running Pest tests..."
-# The suite talks to PostgreSQL: run it inside Sail when available.
+echo "🏗️  [5/6] Building frontend..."
+# Build before the tests: the Pest browser suite drives a real browser against
+# the built assets, so they must be current. Type-check already ran in step [1/6].
+npm run build:assets --silent || fail "Build failed!" "npm run build"
+echo "   ✅ Build: Successful"
+
+echo "🧪 [6/6] Running Pest tests..."
+# The suite talks to PostgreSQL and drives a headless browser: run it inside
+# Sail when available, where the database and Playwright browsers live.
 TEST_RUNNER="composer test"
 if [ -x vendor/bin/sail ] && docker ps --format '{{.Names}}' 2>/dev/null | grep -q 'laravel.test'; then
     TEST_RUNNER="vendor/bin/sail composer test"
 fi
 $TEST_RUNNER --quiet || fail "Tests failed!" "$TEST_RUNNER"
 echo "   ✅ Tests: All passing"
-
-echo "🏗️  [6/6] Building frontend..."
-# Type-check already ran in step [1/6]; build assets without re-running vue-tsc.
-npm run build:assets --silent || fail "Build failed!" "npm run build"
-echo "   ✅ Build: Successful"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ All quality checks passed! Pushing..."
