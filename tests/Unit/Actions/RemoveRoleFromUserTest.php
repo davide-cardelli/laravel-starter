@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\User\RemoveRoleFromUser;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
@@ -14,8 +15,7 @@ use function Pest\Laravel\actingAs;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::create(['name' => 'admin']);
-    Role::create(['name' => 'user']);
+    $this->seed(RolePermissionSeeder::class);
 });
 
 test('remove role action removes role by name', function () {

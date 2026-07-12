@@ -26,9 +26,9 @@ it('logs a user in and lands on the dashboard', function () {
 });
 
 it('stops a two-factor user at the challenge instead of the dashboard', function () {
-    // Factory users have two-factor enabled by default, so a correct password
-    // must not complete the login: Fortify has to divert to the challenge.
-    $user = User::factory()->create([
+    // With two-factor enabled, a correct password must not complete the login:
+    // Fortify has to divert to the challenge.
+    $user = User::factory()->withTwoFactor()->create([
         'email' => 'e2e.twofactor@example.test',
     ]);
 
