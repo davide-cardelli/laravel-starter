@@ -38,12 +38,10 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
+            'quote' => $this->inspiringQuote(),
             'auth' => [
                 'user' => $request->user()?->only([
                     'id',
@@ -66,6 +64,27 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+        ];
+    }
+
+    /**
+     * A random inspiring quote split into message and author.
+     *
+     * Quotes are formatted "message - author"; guard both halves so the
+     * frontend always receives two strings, even for an unexpected format.
+     *
+     * @return array{message: string, author: string}
+     */
+    protected function inspiringQuote(): array
+    {
+        $raw = Inspiring::quotes()->random();
+        $raw = is_string($raw) ? $raw : '';
+
+        $parts = explode('-', $raw, 2);
+
+        return [
+            'message' => trim($parts[0]),
+            'author' => trim($parts[1] ?? ''),
         ];
     }
 }
