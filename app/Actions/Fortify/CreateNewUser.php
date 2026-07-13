@@ -7,7 +7,6 @@ namespace App\Actions\Fortify;
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -22,17 +21,10 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         Validator::make($input, [
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'regex:/^[+]?(?=.*[0-9])[0-9\s\-()]+$/', 'max:25'],
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class),
-            ],
+            'first_name' => User::nameRules(),
+            'last_name' => User::nameRules(),
+            'phone' => User::phoneRules(),
+            'email' => User::emailRules(),
             'password' => $this->passwordRules(),
         ])->validate();
 

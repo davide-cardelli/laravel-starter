@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\Role;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 /**
@@ -32,21 +32,13 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'regex:/^[+]?(?=.*[0-9])[0-9\s\-()]+$/', 'max:25'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
+            'first_name' => User::nameRules(),
+            'last_name' => User::nameRules(),
+            'phone' => User::phoneRules(),
+            'email' => User::emailRules(),
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
             'roles' => ['sometimes', 'array'],
-            // Constrain to the enum's roles AND scope the existence check to
-            // the current guard: an unscoped exists would accept a role seeded
-            // for another guard and blow up later with RoleDoesNotExist.
-            'roles.*' => [
-                'string',
-                Rule::in(Role::values()),
-                Rule::exists('roles', 'name')
-                    ->where('guard_name', config()->string('auth.defaults.guard')),
-            ],
+            'roles.*' => Role::assignmentRules(),
         ];
     }
 

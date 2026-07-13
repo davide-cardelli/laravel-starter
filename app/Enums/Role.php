@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
+use Illuminate\Validation\Rules\In;
+
 /**
  * Role
  *
@@ -50,6 +54,25 @@ enum Role: string
     public static function values(): array
     {
         return array_map(fn (self $case): string => $case->value, self::cases());
+    }
+
+    /**
+     * Validation rules for a submitted role name.
+     *
+     * Constrains input to the enum's roles AND scopes the existence check to
+     * the current guard: an unscoped exists would accept a role seeded for
+     * another guard and blow up later with RoleDoesNotExist.
+     *
+     * @return array<int, In|Exists|string>
+     */
+    public static function assignmentRules(): array
+    {
+        return [
+            'string',
+            Rule::in(self::values()),
+            Rule::exists('roles', 'name')
+                ->where('guard_name', config()->string('auth.defaults.guard')),
+        ];
     }
 
     /**

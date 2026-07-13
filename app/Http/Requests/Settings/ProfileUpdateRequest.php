@@ -7,7 +7,6 @@ namespace App\Http\Requests\Settings;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class ProfileUpdateRequest extends FormRequest
 {
@@ -22,17 +21,10 @@ class ProfileUpdateRequest extends FormRequest
         assert($user !== null, 'User must be authenticated');
 
         return [
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'regex:/^[+]?(?=.*[0-9])[0-9\s\-()]+$/', 'max:25'],
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class)->ignore($user->id),
-            ],
+            'first_name' => User::nameRules(),
+            'last_name' => User::nameRules(),
+            'phone' => User::phoneRules(),
+            'email' => User::emailRules($user->id),
         ];
     }
 }

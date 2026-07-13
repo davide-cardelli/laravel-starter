@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -71,6 +73,55 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * Validation rules for the first/last name fields.
+     *
+     * Centralized so every path that accepts a user name (admin forms,
+     * profile settings, registration) stays in lockstep with the
+     * varchar(100) column width.
+     *
+     * @return array<int, string>
+     */
+    public static function nameRules(): array
+    {
+        return ['required', 'string', 'max:100'];
+    }
+
+    /**
+     * Validation rules for the phone field.
+     *
+     * The regex requires at least one digit, so all-punctuation input is
+     * rejected, and max:25 matches the column width.
+     *
+     * @return array<int, string>
+     */
+    public static function phoneRules(): array
+    {
+        return ['required', 'string', 'regex:/^[+]?(?=.*[0-9])[0-9\s\-()]+$/', 'max:25'];
+    }
+
+    /**
+     * Validation rules for the email field.
+     *
+     * `lowercase` canonicalizes case so mixed-case duplicates are rejected;
+     * uniqueness ignores the given id when updating an existing user.
+     *
+     * @return array<int, Unique|string>
+     */
+    public static function emailRules(?int $ignoreId = null): array
+    {
+        $unique = Rule::unique(self::class);
+
+        return [
+            'required',
+            'string',
+            'lowercase',
+            'email',
+            'max:255',
+            $ignoreId === null ? $unique : $unique->ignore($ignoreId),
         ];
     }
 

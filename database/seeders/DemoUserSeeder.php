@@ -41,7 +41,9 @@ class DemoUserSeeder extends Seeder
                     'first_name' => $firstName,
                     'last_name' => $lastName,
                     'phone' => $phone,
-                    'password' => bcrypt('password'),
+                    // The 'hashed' cast on User hashes this with the configured
+                    // driver — same as the factory, no manual bcrypt().
+                    'password' => 'password',
                     'email_verified_at' => now(),
                 ],
             );
@@ -52,12 +54,12 @@ class DemoUserSeeder extends Seeder
         $this->command->newLine();
         $this->command->table(
             ['First Name', 'Last Name', 'Email', 'Phone', 'Role', 'Password'],
-            [
-                ['Marco', 'Rossi', 'superadmin@example.com', '+39 333 1234567', 'super-admin', 'password'],
-                ['Giulia', 'Bianchi', 'admin@example.com', '+39 334 2345678', 'admin', 'password'],
-                ['Luca', 'Verdi', 'manager@example.com', '+39 335 3456789', 'manager', 'password'],
-                ['Sara', 'Neri', 'user@example.com', '+39 336 4567890', 'user', 'password'],
-            ]
+            // Derived from the single $demoUsers source (reordered to the table
+            // columns) so the credentials can never drift from what was seeded.
+            array_map(
+                fn (array $u): array => [$u[0], $u[1], $u[3], $u[2], $u[4], 'password'],
+                $demoUsers,
+            ),
         );
         $this->command->newLine();
         $this->command->warn('⚠️  Remember to change these passwords!');
