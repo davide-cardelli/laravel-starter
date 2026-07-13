@@ -116,6 +116,20 @@ test('search combined with role filter only returns users matching both', functi
             ->where('users.data.0.id', $marioAdmin->id));
 });
 
+test('an unknown role filter is ignored instead of crashing', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    // A hand-edited ?role= used to reach Spatie's scope unchecked and blow
+    // up with RoleDoesNotExist (a 500); it must fall back to the full list.
+    actingAs($superAdmin)
+        ->get(route('users.index', ['role' => 'nonexistent-role']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/users/Index')
+            ->has('users.data', 1));
+});
+
 // SHOW PAGE
 test('super admin can view the user detail page', function () {
     $superAdmin = User::factory()->create();

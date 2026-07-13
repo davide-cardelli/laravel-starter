@@ -48,7 +48,16 @@ class UserController extends Controller
             })
             ->when($request->input('role'), function ($query, $role) {
                 /** @var string $role */
-                $query->role($role);
+                // Spatie's role scope throws RoleDoesNotExist for unknown
+                // names, so a hand-edited ?role= query string must be
+                // ignored instead of becoming a 500.
+                $exists = Role::where('name', $role)
+                    ->where('guard_name', config()->string('auth.defaults.guard'))
+                    ->exists();
+
+                if ($exists) {
+                    $query->role($role);
+                }
             })
             ->latest()
             ->paginate(15)
