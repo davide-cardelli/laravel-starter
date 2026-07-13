@@ -18,3 +18,16 @@ test('database seeding is idempotent and safely re-runnable', function () {
     expect(User::where('email', 'superadmin@example.com')->count())->toBe(1);
     expect(User::where('email', 'superadmin@example.com')->first()?->hasRole('super-admin'))->toBeTrue();
 });
+
+test('production seeding creates roles but no demo users', function () {
+    // `migrate --seed --force` on a production box must never plant the
+    // well-known demo credentials; roles and permissions remain required.
+    // --force mirrors `composer setup` and skips the production prompt.
+    app()->detectEnvironment(fn (): string => 'production');
+
+    $this->artisan('db:seed', ['--force' => true])->assertSuccessful();
+
+    expect(Role::count())->toBe(4);
+    expect(Permission::count())->toBe(12);
+    expect(User::count())->toBe(0);
+});
