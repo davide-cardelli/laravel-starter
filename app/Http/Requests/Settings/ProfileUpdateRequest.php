@@ -22,8 +22,8 @@ class ProfileUpdateRequest extends FormRequest
         assert($user !== null, 'User must be authenticated');
 
         return [
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
             'phone' => ['required', 'string', 'regex:/^[+]?[0-9\s\-()]+$/', 'max:25'],
             'email' => [
                 'required',
