@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\Role;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -37,7 +38,15 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', Rule::exists('roles', 'name')],
+            // Constrain to the enum's roles AND scope the existence check to
+            // the current guard: an unscoped exists would accept a role seeded
+            // for another guard and blow up later with RoleDoesNotExist.
+            'roles.*' => [
+                'string',
+                Rule::in(Role::values()),
+                Rule::exists('roles', 'name')
+                    ->where('guard_name', config()->string('auth.defaults.guard')),
+            ],
         ];
     }
 

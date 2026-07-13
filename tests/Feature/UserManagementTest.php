@@ -714,6 +714,125 @@ test('user without assign roles permission can create a user when roles field is
     expect(User::where('email', 'formy@example.com')->first()?->roles->count())->toBe(0);
 });
 
+// ROLE RANK HIERARCHY (holding 'assign roles' must not grant roles above one's own)
+test('admin cannot grant super-admin even with assign roles permission', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin'); // holds 'assign roles' but ranks below super-admin
+
+    $targetUser = User::factory()->create();
+
+    actingAs($admin)
+        ->put(route('users.update', $targetUser), [
+            'first_name' => $targetUser->first_name,
+            'last_name' => $targetUser->last_name,
+            'phone' => $targetUser->phone,
+            'email' => $targetUser->email,
+            'roles' => ['super-admin'],
+        ])
+        ->assertStatus(403);
+
+    expect($targetUser->fresh()?->hasRole('super-admin'))->toBeFalse();
+});
+
+test('admin cannot grant super-admin through the inline assign endpoint', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $targetUser = User::factory()->create();
+    $superAdminRole = Role::findByName('super-admin');
+
+    actingAs($admin)
+        ->post(route('users.assign-role', [$targetUser, $superAdminRole]))
+        ->assertStatus(403);
+
+    expect($targetUser->fresh()?->hasRole('super-admin'))->toBeFalse();
+});
+
+test('admin cannot revoke super-admin through the inline remove endpoint', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+    $superAdminRole = Role::findByName('super-admin');
+
+    actingAs($admin)
+        ->delete(route('users.remove-role', [$superAdmin, $superAdminRole]))
+        ->assertStatus(403);
+
+    expect($superAdmin->fresh()?->hasRole('super-admin'))->toBeTrue();
+});
+
+test('admin can assign roles of equal or lower rank', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $targetUser = User::factory()->create();
+
+    actingAs($admin)
+        ->put(route('users.update', $targetUser), [
+            'first_name' => $targetUser->first_name,
+            'last_name' => $targetUser->last_name,
+            'phone' => $targetUser->phone,
+            'email' => $targetUser->email,
+            'roles' => ['manager'],
+        ])
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
+
+    expect($targetUser->fresh()?->hasRole('manager'))->toBeTrue();
+});
+
+// LAST SUPER-ADMIN PROTECTION (the system must never end up with zero super-admins)
+test('the last super-admin cannot be deleted', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin'); // holds 'delete users'
+
+    $soleSuperAdmin = User::factory()->create();
+    $soleSuperAdmin->assignRole('super-admin');
+
+    actingAs($admin)
+        ->delete(route('users.destroy', $soleSuperAdmin))
+        ->assertStatus(403);
+
+    assertDatabaseHas('users', ['id' => $soleSuperAdmin->id]);
+});
+
+test('the sole super-admin cannot remove their own super-admin role', function () {
+    $soleSuperAdmin = User::factory()->create();
+    $soleSuperAdmin->assignRole('super-admin');
+    $superAdminRole = Role::findByName('super-admin');
+
+    actingAs($soleSuperAdmin)
+        ->delete(route('users.remove-role', [$soleSuperAdmin, $superAdminRole]))
+        ->assertStatus(403);
+
+    expect($soleSuperAdmin->fresh()?->hasRole('super-admin'))->toBeTrue();
+});
+
+test('a super-admin can be demoted while another super-admin remains', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    $demotable = User::factory()->create();
+    $demotable->assignRole('super-admin');
+
+    actingAs($superAdmin)
+        ->put(route('users.update', $demotable), [
+            'first_name' => $demotable->first_name,
+            'last_name' => $demotable->last_name,
+            'phone' => $demotable->phone,
+            'email' => $demotable->email,
+            'roles' => ['admin'],
+        ])
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
+
+    $demotable->refresh();
+    expect($demotable->hasRole('super-admin'))->toBeFalse();
+    expect($demotable->hasRole('admin'))->toBeTrue();
+});
+
 test('roles must be existing role names', function () {
     $superAdmin = User::factory()->create();
     $superAdmin->assignRole('super-admin');

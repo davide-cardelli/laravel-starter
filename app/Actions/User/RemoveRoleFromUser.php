@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
+use App\Actions\User\Concerns\GuardsLastSuperAdmin;
+use App\Enums\Role as RoleEnum;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
 
@@ -17,6 +20,8 @@ use Spatie\Permission\Models\Role;
  */
 class RemoveRoleFromUser
 {
+    use GuardsLastSuperAdmin;
+
     /**
      * Execute the remove role action.
      *
@@ -35,7 +40,15 @@ class RemoveRoleFromUser
             'removed_by' => Auth::id(),
         ]);
 
-        $user->removeRole($role);
+        DB::transaction(function () use ($user, $role, $roleName): void {
+            // Only stripping the super-admin role itself endangers the
+            // invariant; removing any other role from a super-admin is fine.
+            if ($roleName === RoleEnum::SuperAdmin->value) {
+                $this->abortIfLastSuperAdmin($user);
+            }
+
+            $user->removeRole($role);
+        });
 
         Log::info('Role removed successfully', [
             'user_id' => $user->id,

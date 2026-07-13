@@ -10,6 +10,7 @@ use App\Actions\User\DeleteUser;
 use App\Actions\User\RemoveRoleFromUser;
 use App\Actions\User\UpdateUser;
 use App\Enums\Permission;
+use App\Enums\Role as RoleEnum;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
@@ -186,7 +187,43 @@ class UserController extends Controller
 
         abort_if($changed && ! $canAssign, 403);
 
+        if ($changed) {
+            // Rank hierarchy: every role being granted or revoked (the delta
+            // between the sets) must be within the caller's authority.
+            $delta = array_merge(
+                array_diff($submitted, $current),
+                array_diff($current, $submitted),
+            );
+            $this->authorizeRankOver($request, ...$delta);
+        }
+
         return $canAssign ? $submitted : null;
+    }
+
+    /**
+     * Abort with 403 unless the caller outranks every given role.
+     *
+     * The 'assign roles' permission grants access to role management, but the
+     * rank hierarchy on the Role enum bounds WHICH roles: nobody hands out a
+     * role above their own station, and super-admin is only ever granted or
+     * revoked by another super-admin. Custom roles created at runtime sit
+     * outside the enum and carry no rank, so the permission alone governs them.
+     */
+    private function authorizeRankOver(Request $request, string ...$roleNames): void
+    {
+        /** @var iterable<int, string> $callerRoleNames */
+        $callerRoleNames = $request->user()?->getRoleNames() ?? [];
+        $callerHighest = RoleEnum::highestOf($callerRoleNames);
+
+        foreach ($roleNames as $roleName) {
+            $target = RoleEnum::tryFrom($roleName);
+
+            if ($target === null) {
+                continue;
+            }
+
+            abort_unless($callerHighest?->canAssign($target) ?? false, 403);
+        }
     }
 
     /**
@@ -216,6 +253,8 @@ class UserController extends Controller
         Role $role,
         AssignRoleToUser $assignRoleToUser
     ): JsonResponse|RedirectResponse {
+        $this->authorizeRankOver($request, $role->name);
+
         $assignRoleToUser->execute($user, $role);
 
         $message = "Role '{$role->name}' assigned successfully.";
@@ -240,6 +279,8 @@ class UserController extends Controller
         Role $role,
         RemoveRoleFromUser $removeRoleFromUser
     ): JsonResponse|RedirectResponse {
+        $this->authorizeRankOver($request, $role->name);
+
         $removeRoleFromUser->execute($user, $role);
 
         $message = "Role '{$role->name}' removed successfully.";

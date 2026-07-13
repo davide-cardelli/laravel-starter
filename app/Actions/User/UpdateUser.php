@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
+use App\Actions\User\Concerns\GuardsLastSuperAdmin;
+use App\Enums\Role as RoleEnum;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +20,8 @@ use Illuminate\Support\Facades\Log;
  */
 class UpdateUser
 {
+    use GuardsLastSuperAdmin;
+
     /**
      * Execute the update user action.
      *
@@ -63,6 +67,12 @@ class UpdateUser
         }
 
         DB::transaction(function () use ($user, $updateData, $roles): void {
+            // A sync that drops super-admin from the set strips the status
+            // just like an explicit removal, so the same invariant applies.
+            if ($roles !== null && ! in_array(RoleEnum::SuperAdmin->value, $roles, true)) {
+                $this->abortIfLastSuperAdmin($user);
+            }
+
             $user->update($updateData);
 
             if ($roles !== null) {
