@@ -92,16 +92,21 @@ class User extends Authenticatable implements MustVerifyEmail
      * Scope the query to users matching the given search term.
      *
      * Matches the full name ("Mario Rossi"), either name part, or the
-     * email, case-insensitively. Uses ILIKE, which is PostgreSQL-specific.
+     * email, case-insensitively. LOWER(...) LIKE is portable across
+     * PostgreSQL, MySQL and SQLite (ILIKE is PostgreSQL-only), and the
+     * leading-wildcard %term% never used an index anyway, so nothing
+     * regresses.
      *
      * @param  Builder<User>  $query
      */
     #[Scope]
     protected function search(Builder $query, string $term): void
     {
+        $needle = '%'.mb_strtolower($term).'%';
+
         $query->whereAny([
-            DB::raw("concat(first_name, ' ', last_name)"),
-            'email',
-        ], 'ilike', "%{$term}%");
+            DB::raw("LOWER(concat(first_name, ' ', last_name))"),
+            DB::raw('LOWER(email)'),
+        ], 'like', $needle);
     }
 }
