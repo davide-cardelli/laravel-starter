@@ -104,6 +104,37 @@ test('user without delete users permission cannot delete users', function () {
     expect((new UserPolicy)->delete($user, $targetUser))->toBeFalse();
 });
 
+// RANK GUARD TESTS (a lower-ranked actor must not edit/delete one who outranks them)
+test('admin cannot update a super-admin', function () {
+    $admin = User::factory()->withRole('admin')->create();
+    $superAdmin = User::factory()->superAdmin()->create();
+
+    expect((new UserPolicy)->update($admin, $superAdmin))->toBeFalse();
+});
+
+test('admin cannot delete a super-admin', function () {
+    $admin = User::factory()->withRole('admin')->create();
+    $superAdmin = User::factory()->superAdmin()->create();
+
+    expect((new UserPolicy)->delete($admin, $superAdmin))->toBeFalse();
+});
+
+test('super-admin can update and delete an admin', function () {
+    $superAdmin = User::factory()->superAdmin()->create();
+    $admin = User::factory()->withRole('admin')->create();
+
+    expect((new UserPolicy)->update($superAdmin, $admin))->toBeTrue();
+    expect((new UserPolicy)->delete($superAdmin, $admin))->toBeTrue();
+});
+
+test('an admin can manage another admin of equal rank', function () {
+    $admin = User::factory()->withRole('admin')->create();
+    $peer = User::factory()->withRole('admin')->create();
+
+    expect((new UserPolicy)->update($admin, $peer))->toBeTrue();
+    expect((new UserPolicy)->delete($admin, $peer))->toBeTrue();
+});
+
 // ASSIGN ROLE TESTS
 test('user with assign roles permission can assign roles', function () {
     $user = User::factory()->superAdmin()->create();

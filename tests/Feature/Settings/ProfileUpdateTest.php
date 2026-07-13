@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -88,4 +89,40 @@ test('correct password must be provided to delete account', function () {
         ->assertRedirect(route('profile.edit'));
 
     expect($user->fresh())->not->toBeNull();
+});
+
+test('the sole super-admin cannot delete their own account', function () {
+    $this->seed(RolePermissionSeeder::class);
+
+    $superAdmin = User::factory()->superAdmin()->create();
+
+    // Self-service deletion must honour the same last-super-admin invariant as
+    // the admin panel, or the sole super-admin could lock the whole system out.
+    $this
+        ->actingAs($superAdmin)
+        ->delete(route('profile.destroy'), [
+            'password' => 'password',
+        ])
+        ->assertStatus(403);
+
+    // Blocked before logout: the account survives and the session is intact.
+    expect($superAdmin->fresh())->not->toBeNull();
+    $this->assertAuthenticatedAs($superAdmin);
+});
+
+test('a super-admin can delete their own account when another remains', function () {
+    $this->seed(RolePermissionSeeder::class);
+
+    $superAdmin = User::factory()->superAdmin()->create();
+    User::factory()->superAdmin()->create(); // a second super-admin survives
+
+    $this
+        ->actingAs($superAdmin)
+        ->delete(route('profile.destroy'), [
+            'password' => 'password',
+        ])
+        ->assertRedirect(route('home'));
+
+    $this->assertGuest();
+    expect($superAdmin->fresh())->toBeNull();
 });
