@@ -30,7 +30,6 @@ class AssignRoleToUser
 
         Log::info('Assigning role to user', [
             'user_id' => $user->id,
-            'email' => $user->email,
             'role' => $roleName,
             'assigned_by' => Auth::id(),
         ]);

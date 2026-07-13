@@ -32,10 +32,10 @@ class DeleteUser
      */
     public function execute(User $user): bool
     {
+        // Log identifiers only — the user's PII should not outlive them in
+        // the log files.
         Log::warning('Deleting user', [
             'user_id' => $user->id,
-            'email' => $user->email,
-            'name' => $user->name,
             'deleted_by' => Auth::id(),
         ]);
 
@@ -51,12 +51,10 @@ class DeleteUser
         if ($result) {
             Log::info('User deleted successfully', [
                 'user_id' => $user->id,
-                'email' => $user->email,
             ]);
         } else {
             Log::error('Failed to delete user', [
                 'user_id' => $user->id,
-                'email' => $user->email,
             ]);
         }
 

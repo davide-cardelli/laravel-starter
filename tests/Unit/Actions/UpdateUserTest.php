@@ -110,6 +110,7 @@ test('update user action logs operation', function () {
         'password' => 'new-password',
     ]);
 
+    // Change FLAGS are logged, never the PII values themselves.
     Log::shouldHaveReceived('info')
         ->with('Updating user', Mockery::on(function ($context) use ($user, $admin) {
             return $context['user_id'] === $user->id &&
@@ -118,7 +119,8 @@ test('update user action logs operation', function () {
                    $context['changes']['last_name'] === true &&
                    $context['changes']['phone'] === true &&
                    $context['changes']['email'] === true &&
-                   $context['changes']['password'] === true;
+                   $context['changes']['password'] === true &&
+                   ! array_key_exists('email', $context);
         }))
         ->once();
 

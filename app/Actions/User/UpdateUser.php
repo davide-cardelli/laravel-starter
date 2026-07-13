@@ -38,9 +38,9 @@ class UpdateUser
      */
     public function execute(User $user, array $data, ?array $roles = null): User
     {
+        // Log identifiers and change flags only — never the PII values.
         Log::info('Updating user', [
             'user_id' => $user->id,
-            'email' => $user->email,
             'updated_by' => Auth::id(),
             'changes' => [
                 'first_name' => $data['first_name'] !== $user->first_name,
@@ -82,8 +82,6 @@ class UpdateUser
 
         Log::info('User updated successfully', [
             'user_id' => $user->id,
-            'email' => $user->email,
-            'name' => $user->name,
         ]);
 
         return $user->fresh() ?? $user;

@@ -59,12 +59,13 @@ test('remove role action logs operation with role name', function () {
     $action = new RemoveRoleFromUser;
     $action->execute($user, 'admin');
 
+    // Identifiers only in the audit trail — the email is PII and stays out.
     Log::shouldHaveReceived('info')
         ->with('Removing role from user', Mockery::on(function ($context) use ($user, $admin) {
             return $context['user_id'] === $user->id &&
-                   $context['email'] === 'test@example.com' &&
                    $context['role'] === 'admin' &&
-                   $context['removed_by'] === $admin->id;
+                   $context['removed_by'] === $admin->id &&
+                   ! array_key_exists('email', $context);
         }))
         ->once();
 

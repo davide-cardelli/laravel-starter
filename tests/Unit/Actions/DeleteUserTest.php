@@ -46,12 +46,13 @@ test('delete user action logs at warning level', function () {
     $action = new DeleteUser;
     $action->execute($user);
 
+    // Identifiers only: the user's PII must not outlive them in the logs.
     Log::shouldHaveReceived('warning')
         ->with('Deleting user', Mockery::on(function ($context) use ($user, $admin) {
             return $context['user_id'] === $user->id &&
-                   $context['email'] === 'test@example.com' &&
-                   $context['name'] === 'Test User' &&
-                   $context['deleted_by'] === $admin->id;
+                   $context['deleted_by'] === $admin->id &&
+                   ! array_key_exists('email', $context) &&
+                   ! array_key_exists('name', $context);
         }))
         ->once();
 });
@@ -68,9 +69,10 @@ test('delete user action logs success', function () {
     $action->execute($user);
 
     Log::shouldHaveReceived('info')
-        ->withArgs(function ($message, $context) {
+        ->withArgs(function ($message, $context) use ($user) {
             return $message === 'User deleted successfully' &&
-                   $context['email'] === 'delete@example.com';
+                   $context['user_id'] === $user->id &&
+                   ! array_key_exists('email', $context);
         })
         ->once();
 });

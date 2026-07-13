@@ -35,7 +35,6 @@ class RemoveRoleFromUser
 
         Log::info('Removing role from user', [
             'user_id' => $user->id,
-            'email' => $user->email,
             'role' => $roleName,
             'removed_by' => Auth::id(),
         ]);

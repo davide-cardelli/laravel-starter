@@ -54,12 +54,13 @@ test('assign role action logs operation with role name', function () {
     $action = new AssignRoleToUser;
     $action->execute($user, 'admin');
 
+    // Identifiers only in the audit trail — the email is PII and stays out.
     Log::shouldHaveReceived('info')
         ->with('Assigning role to user', Mockery::on(function ($context) use ($user, $admin) {
             return $context['user_id'] === $user->id &&
-                   $context['email'] === 'test@example.com' &&
                    $context['role'] === 'admin' &&
-                   $context['assigned_by'] === $admin->id;
+                   $context['assigned_by'] === $admin->id &&
+                   ! array_key_exists('email', $context);
         }))
         ->once();
 
