@@ -34,8 +34,8 @@ class StoreUserRequest extends FormRequest
         return [
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'regex:/^[+]?[0-9\s\-()]+$/', 'max:25'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone' => ['required', 'string', 'regex:/^[+]?(?=.*[0-9])[0-9\s\-()]+$/', 'max:25'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
             'roles' => ['sometimes', 'array'],
             // Constrain to the enum's roles AND scope the existence check to

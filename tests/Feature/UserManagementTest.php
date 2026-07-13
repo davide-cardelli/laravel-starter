@@ -847,6 +847,24 @@ test('a super-admin can be demoted while another super-admin remains', function 
     expect($demotable->hasRole('admin'))->toBeTrue();
 });
 
+test('user creation rejects uppercase emails and digitless phones', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    actingAs($superAdmin)
+        ->post(route('users.store'), [
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'phone' => '+ () -',
+            'email' => 'Case.Variant@Example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])
+        ->assertSessionHasErrors(['email', 'phone']);
+
+    assertDatabaseMissing('users', ['first_name' => 'Test', 'last_name' => 'User']);
+});
+
 test('roles must be existing role names', function () {
     $superAdmin = User::factory()->create();
     $superAdmin->assignRole('super-admin');

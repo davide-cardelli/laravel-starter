@@ -59,6 +59,27 @@ test('password can be reset with valid token', function () {
     });
 });
 
+test('password reset rejects a password below the default policy', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $this->post(route('password.email'), ['email' => $user->email]);
+
+    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+        $response = $this->post(route('password.update'), [
+            'token' => $notification->token,
+            'email' => $user->email,
+            'password' => 'short12',
+            'password_confirmation' => 'short12',
+        ]);
+
+        $response->assertSessionHasErrors('password');
+
+        return true;
+    });
+});
+
 test('password cannot be reset with invalid token', function () {
     $user = User::factory()->create();
 
