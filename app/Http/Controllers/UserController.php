@@ -10,6 +10,7 @@ use App\Actions\User\DeleteUser;
 use App\Actions\User\RemoveRoleFromUser;
 use App\Actions\User\UpdateUser;
 use App\Enums\Permission;
+use App\Enums\Role as RoleEnum;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
@@ -39,21 +40,31 @@ class UserController extends Controller
     #[Authorize('viewAny', User::class)]
     public function index(Request $request): Response
     {
+        // Loaded once, then reused both for the role filter below and for the
+        // Inertia payload — no extra query for the filter lookup.
+        $roles = Role::all();
+
         $users = User::query()
             ->with('roles')
             ->when($request->input('search'), function ($query, $search) {
                 /** @var string $search */
                 $query->search($search);
             })
-            ->when($request->input('role'), function ($query, $role) {
+            ->when($request->input('role'), function ($query, $role) use ($roles) {
                 /** @var string $role */
-                $query->role($role);
+                // Resolve the filter against the already-loaded roles: passing
+                // the model to the scope avoids Spatie re-querying it by name,
+                // and an unknown ?role= is ignored instead of crashing the
+                // scope with RoleDoesNotExist.
+                $match = $roles->firstWhere('name', $role);
+
+                if ($match !== null) {
+                    $query->role($match);
+                }
             })
             ->latest()
             ->paginate(15)
             ->withQueryString();
-
-        $roles = Role::all();
 
         return Inertia::render('admin/users/Index', [
             'users' => $users,
@@ -184,9 +195,45 @@ class UserController extends Controller
         $changed = collect($submitted)->sort()->values()->all()
             !== collect($current)->sort()->values()->all();
 
-        abort_if($changed && ! $canAssign, 403);
+        if ($changed) {
+            abort_unless($canAssign, 403);
+
+            // Rank hierarchy: every role being granted or revoked (the delta
+            // between the sets) must be within the caller's authority.
+            $delta = array_merge(
+                array_diff($submitted, $current),
+                array_diff($current, $submitted),
+            );
+            $this->authorizeRankOver($request, ...$delta);
+        }
 
         return $canAssign ? $submitted : null;
+    }
+
+    /**
+     * Abort with 403 unless the caller outranks every given role.
+     *
+     * The 'assign roles' permission grants access to role management, but the
+     * rank hierarchy on the Role enum bounds WHICH roles: nobody hands out a
+     * role above their own station, and super-admin is only ever granted or
+     * revoked by another super-admin. Custom roles created at runtime sit
+     * outside the enum and carry no rank, so the permission alone governs them.
+     */
+    private function authorizeRankOver(Request $request, string ...$roleNames): void
+    {
+        /** @var iterable<int, string> $callerRoleNames */
+        $callerRoleNames = $request->user()?->getRoleNames() ?? [];
+        $callerHighest = RoleEnum::highestOf($callerRoleNames);
+
+        foreach ($roleNames as $roleName) {
+            $target = RoleEnum::tryFrom($roleName);
+
+            if ($target === null) {
+                continue;
+            }
+
+            abort_unless($callerHighest?->canAssign($target) ?? false, 403);
+        }
     }
 
     /**
@@ -216,6 +263,8 @@ class UserController extends Controller
         Role $role,
         AssignRoleToUser $assignRoleToUser
     ): JsonResponse|RedirectResponse {
+        $this->authorizeRankOver($request, $role->name);
+
         $assignRoleToUser->execute($user, $role);
 
         $message = "Role '{$role->name}' assigned successfully.";
@@ -240,6 +289,8 @@ class UserController extends Controller
         Role $role,
         RemoveRoleFromUser $removeRoleFromUser
     ): JsonResponse|RedirectResponse {
+        $this->authorizeRankOver($request, $role->name);
+
         $removeRoleFromUser->execute($user, $role);
 
         $message = "Role '{$role->name}' removed successfully.";

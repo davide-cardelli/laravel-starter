@@ -42,8 +42,9 @@ Rules of thumb:
 ## Type safety
 
 - **PHP**: PHPStan **level 9** (`composer analyse`). No new baseline entries, no
-  `@phpstan-ignore`. Every file declares `strict_types=1` (enforced by an arch
-  test).
+  `@phpstan-ignore`. Every file declares `strict_types=1` — the arch test
+  enforces this for the `App` namespace only; tests, seeders and config follow
+  by convention.
 - **Frontend**: `vue-tsc` strict type-check (`npm run type-check`). Route helpers
   come from Wayfinder (`@/routes`, `@/actions`) — do not hardcode URLs.
 
@@ -52,6 +53,9 @@ Rules of thumb:
 - Suites: `tests/Unit`, `tests/Feature`, `tests/Browser`.
 - **Browser tests** use Pest 4 browser testing (Playwright), not Dusk. They drive
   a real headless browser against an in-process server and run **inside Sail**.
+- Browser tests load the **built** assets (`public/build`), not the Vite dev
+  server: after touching `.vue`/`.ts` files, regenerate Wayfinder and run
+  `npm run build:assets` before running them, or they exercise stale code.
 - Architecture tests (`tests/Unit/ArchTest.php`) pin conventions: strict types,
   no debug helpers (`dd`/`dump`/`ray`) in `app/`, layer boundaries, string-backed
   enums.

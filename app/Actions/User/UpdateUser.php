@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
+use App\Actions\User\Concerns\GuardsLastSuperAdmin;
+use App\Enums\Role as RoleEnum;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +20,8 @@ use Illuminate\Support\Facades\Log;
  */
 class UpdateUser
 {
+    use GuardsLastSuperAdmin;
+
     /**
      * Execute the update user action.
      *
@@ -34,9 +38,9 @@ class UpdateUser
      */
     public function execute(User $user, array $data, ?array $roles = null): User
     {
+        // Log identifiers and change flags only — never the PII values.
         Log::info('Updating user', [
             'user_id' => $user->id,
-            'email' => $user->email,
             'updated_by' => Auth::id(),
             'changes' => [
                 'first_name' => $data['first_name'] !== $user->first_name,
@@ -63,6 +67,12 @@ class UpdateUser
         }
 
         DB::transaction(function () use ($user, $updateData, $roles): void {
+            // A sync that drops super-admin from the set strips the status
+            // just like an explicit removal, so the same invariant applies.
+            if ($roles !== null && ! in_array(RoleEnum::SuperAdmin->value, $roles, true)) {
+                $this->abortIfLastSuperAdmin($user);
+            }
+
             $user->update($updateData);
 
             if ($roles !== null) {
@@ -72,8 +82,6 @@ class UpdateUser
 
         Log::info('User updated successfully', [
             'user_id' => $user->id,
-            'email' => $user->email,
-            'name' => $user->name,
         ]);
 
         return $user->fresh() ?? $user;

@@ -80,20 +80,4 @@ class UserPolicy
     {
         return $user->can(Permission::AssignRoles->value); // Same permission as assign
     }
-
-    /**
-     * Determine if the user can restore the given user.
-     */
-    public function restore(User $user, User $model): bool
-    {
-        return $user->can(Permission::DeleteUsers->value);
-    }
-
-    /**
-     * Determine if the user can permanently delete the given user.
-     */
-    public function forceDelete(User $user, User $model): bool
-    {
-        return $user->can(Permission::DeleteUsers->value);
-    }
 }

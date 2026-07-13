@@ -116,6 +116,20 @@ test('search combined with role filter only returns users matching both', functi
             ->where('users.data.0.id', $marioAdmin->id));
 });
 
+test('an unknown role filter is ignored instead of crashing', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    // A hand-edited ?role= used to reach Spatie's scope unchecked and blow
+    // up with RoleDoesNotExist (a 500); it must fall back to the full list.
+    actingAs($superAdmin)
+        ->get(route('users.index', ['role' => 'nonexistent-role']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/users/Index')
+            ->has('users.data', 1));
+});
+
 // SHOW PAGE
 test('super admin can view the user detail page', function () {
     $superAdmin = User::factory()->create();
@@ -367,6 +381,32 @@ test('user cannot delete other users', function () {
 
     assertDatabaseHas('users', [
         'id' => $targetUser->id,
+    ]);
+});
+
+test('user cannot update themselves through the admin panel', function () {
+    $admin = User::factory()->create([
+        'first_name' => 'Original',
+    ]);
+    $admin->assignRole('super-admin');
+
+    // Self-editing via the admin endpoint would change the password without
+    // current_password and the email without re-verification, so the policy
+    // must reject it even for the highest role.
+    actingAs($admin)
+        ->put(route('users.update', $admin), [
+            'first_name' => 'Hijacked',
+            'last_name' => 'Self',
+            'phone' => '+39 333 9999999',
+            'email' => 'sneaky-new-email@example.com',
+            'password' => 'brand-new-password',
+            'password_confirmation' => 'brand-new-password',
+        ])
+        ->assertStatus(403);
+
+    assertDatabaseHas('users', [
+        'id' => $admin->id,
+        'first_name' => 'Original',
     ]);
 });
 
@@ -686,6 +726,143 @@ test('user without assign roles permission can create a user when roles field is
         ->assertSessionHas('success');
 
     expect(User::where('email', 'formy@example.com')->first()?->roles->count())->toBe(0);
+});
+
+// ROLE RANK HIERARCHY (holding 'assign roles' must not grant roles above one's own)
+test('admin cannot grant super-admin even with assign roles permission', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin'); // holds 'assign roles' but ranks below super-admin
+
+    $targetUser = User::factory()->create();
+
+    actingAs($admin)
+        ->put(route('users.update', $targetUser), [
+            'first_name' => $targetUser->first_name,
+            'last_name' => $targetUser->last_name,
+            'phone' => $targetUser->phone,
+            'email' => $targetUser->email,
+            'roles' => ['super-admin'],
+        ])
+        ->assertStatus(403);
+
+    expect($targetUser->fresh()?->hasRole('super-admin'))->toBeFalse();
+});
+
+test('admin cannot grant super-admin through the inline assign endpoint', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $targetUser = User::factory()->create();
+    $superAdminRole = Role::findByName('super-admin');
+
+    actingAs($admin)
+        ->post(route('users.assign-role', [$targetUser, $superAdminRole]))
+        ->assertStatus(403);
+
+    expect($targetUser->fresh()?->hasRole('super-admin'))->toBeFalse();
+});
+
+test('admin cannot revoke super-admin through the inline remove endpoint', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+    $superAdminRole = Role::findByName('super-admin');
+
+    actingAs($admin)
+        ->delete(route('users.remove-role', [$superAdmin, $superAdminRole]))
+        ->assertStatus(403);
+
+    expect($superAdmin->fresh()?->hasRole('super-admin'))->toBeTrue();
+});
+
+test('admin can assign roles of equal or lower rank', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $targetUser = User::factory()->create();
+
+    actingAs($admin)
+        ->put(route('users.update', $targetUser), [
+            'first_name' => $targetUser->first_name,
+            'last_name' => $targetUser->last_name,
+            'phone' => $targetUser->phone,
+            'email' => $targetUser->email,
+            'roles' => ['manager'],
+        ])
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
+
+    expect($targetUser->fresh()?->hasRole('manager'))->toBeTrue();
+});
+
+// LAST SUPER-ADMIN PROTECTION (the system must never end up with zero super-admins)
+test('the last super-admin cannot be deleted', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin'); // holds 'delete users'
+
+    $soleSuperAdmin = User::factory()->create();
+    $soleSuperAdmin->assignRole('super-admin');
+
+    actingAs($admin)
+        ->delete(route('users.destroy', $soleSuperAdmin))
+        ->assertStatus(403);
+
+    assertDatabaseHas('users', ['id' => $soleSuperAdmin->id]);
+});
+
+test('the sole super-admin cannot remove their own super-admin role', function () {
+    $soleSuperAdmin = User::factory()->create();
+    $soleSuperAdmin->assignRole('super-admin');
+    $superAdminRole = Role::findByName('super-admin');
+
+    actingAs($soleSuperAdmin)
+        ->delete(route('users.remove-role', [$soleSuperAdmin, $superAdminRole]))
+        ->assertStatus(403);
+
+    expect($soleSuperAdmin->fresh()?->hasRole('super-admin'))->toBeTrue();
+});
+
+test('a super-admin can be demoted while another super-admin remains', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    $demotable = User::factory()->create();
+    $demotable->assignRole('super-admin');
+
+    actingAs($superAdmin)
+        ->put(route('users.update', $demotable), [
+            'first_name' => $demotable->first_name,
+            'last_name' => $demotable->last_name,
+            'phone' => $demotable->phone,
+            'email' => $demotable->email,
+            'roles' => ['admin'],
+        ])
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
+
+    $demotable->refresh();
+    expect($demotable->hasRole('super-admin'))->toBeFalse();
+    expect($demotable->hasRole('admin'))->toBeTrue();
+});
+
+test('user creation rejects uppercase emails and digitless phones', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    actingAs($superAdmin)
+        ->post(route('users.store'), [
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'phone' => '+ () -',
+            'email' => 'Case.Variant@Example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])
+        ->assertSessionHasErrors(['email', 'phone']);
+
+    assertDatabaseMissing('users', ['first_name' => 'Test', 'last_name' => 'User']);
 });
 
 test('roles must be existing role names', function () {

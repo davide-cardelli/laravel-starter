@@ -65,6 +65,14 @@ test('email is not verified with invalid user id', function () {
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
 
+test('unverified user is blocked from the dashboard', function () {
+    $user = User::factory()->unverified()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertRedirect(route('verification.notice', absolute: false));
+});
+
 test('verified user is redirected to dashboard from verification prompt', function () {
     $user = User::factory()->create();
 

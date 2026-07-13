@@ -12,7 +12,6 @@ parameters:
 
     # Exclude problematic paths
     excludePaths:
-        - app/Http/Middleware/HandleInertiaRequests.php
         - database/migrations/*_create_permission_tables.php
         - bootstrap/*
         - storage/*

@@ -331,10 +331,14 @@ public function store(StoreUserRequest $request, CreateUser $createUser)
 
 | Role | Permissions | Description |
 |------|-------------|-------------|
-| **super-admin** | All permissions | Full system access |
-| **admin** | User + content management | Administrative access |
-| **manager** | Content management | Content editing only |
-| **user** | Basic viewing | Standard user access |
+| **super-admin** | All permissions | Full access; only another super-admin can grant or revoke it, and the last super-admin can never be deleted or demoted |
+| **admin** | All permissions | Full access like super-admin, but ranks below it: cannot grant or revoke the super-admin role |
+| **manager** | View users + content management | Content editing, read-only on users |
+| **user** | View content | Standard user access (default on self-registration) |
+
+Role authority follows a rank hierarchy defined on the `Role` enum
+(`super-admin > admin > manager > user`): holders of the `assign roles`
+permission can only grant or revoke roles at or below their own rank.
 
 ### Customization
 
@@ -506,6 +510,15 @@ Every Action logs:
 - 🔒 **Sensitive data protected** - Tokens, API keys excluded
 - 🔒 **Audit trail** - All operations tracked with user context
 
+### Deploying behind a proxy
+
+The template trusts the immediate upstream proxy (`trustProxies(at: '*')` in
+`bootstrap/app.php`) so that, behind a TLS-terminating load balancer or CDN,
+the real client IP reaches the per-IP rate limiters (login, register,
+password reset) and HTTPS detection keeps cookies `Secure`. If clients can
+also reach the app server directly, tighten `'*'` to your proxy's explicit
+IPs/CIDRs to prevent `X-Forwarded-For` spoofing.
+
 ---
 
 ## 🧪 Testing
@@ -673,12 +686,12 @@ npm install
 ./vendor/bin/sail artisan migrate:fresh --seed
 ```
 
-### Permission Denied on Git Hooks
+### Git Hooks Not Running
 
 ```bash
-# Make hooks executable
-chmod +x .git/hooks/pre-commit
-chmod +x .git/hooks/pre-push
+# Hooks are tracked in .githooks/ and activated by composer setup;
+# re-activate manually if needed:
+git config core.hooksPath .githooks
 ```
 
 ### PHPStan Cache Issues

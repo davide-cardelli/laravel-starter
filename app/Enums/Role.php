@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
+use Illuminate\Validation\Rules\In;
+
 /**
  * Role
  *
@@ -50,5 +54,79 @@ enum Role: string
     public static function values(): array
     {
         return array_map(fn (self $case): string => $case->value, self::cases());
+    }
+
+    /**
+     * Validation rules for a submitted role name.
+     *
+     * Constrains input to the enum's roles AND scopes the existence check to
+     * the current guard: an unscoped exists would accept a role seeded for
+     * another guard and blow up later with RoleDoesNotExist.
+     *
+     * @return array<int, In|Exists|string>
+     */
+    public static function assignmentRules(): array
+    {
+        return [
+            'string',
+            Rule::in(self::values()),
+            Rule::exists('roles', 'name')
+                ->where('guard_name', config()->string('auth.defaults.guard')),
+        ];
+    }
+
+    /**
+     * The authority rank of this role: higher outranks lower.
+     *
+     * The hierarchy is what stops privilege escalation — holding the
+     * 'assign roles' permission alone must never let someone hand out a role
+     * above their own station.
+     */
+    public function rank(): int
+    {
+        return match ($this) {
+            self::SuperAdmin => 4,
+            self::Admin => 3,
+            self::Manager => 2,
+            self::User => 1,
+        };
+    }
+
+    /**
+     * Whether a holder of this role may grant or revoke the target role.
+     */
+    public function canAssign(self $target): bool
+    {
+        // Super-admin is special-cased: only a super-admin may grant or
+        // revoke it, so the top role can never be minted from below.
+        if ($target === self::SuperAdmin) {
+            return $this === self::SuperAdmin;
+        }
+
+        return $this->rank() >= $target->rank();
+    }
+
+    /**
+     * The highest-ranked enum role among the given role names.
+     *
+     * Accepts plain strings (not User) so this layer stays a true leaf.
+     * Unknown names — custom roles created at runtime — carry no rank and
+     * are ignored.
+     *
+     * @param  iterable<int, string>  $roleNames
+     */
+    public static function highestOf(iterable $roleNames): ?self
+    {
+        $highest = null;
+
+        foreach ($roleNames as $name) {
+            $case = self::tryFrom($name);
+
+            if ($case !== null && ($highest === null || $case->rank() > $highest->rank())) {
+                $highest = $case;
+            }
+        }
+
+        return $highest;
     }
 }

@@ -48,6 +48,14 @@ class RolePermissionSeeder extends Seeder
             // — so it stays omnipotent. Filtering by guard avoids Spatie's
             // GuardDoesNotMatch when the app also registers permissions on another
             // guard (e.g. 'api'). Other roles get exactly their enum-declared set.
+            //
+            // FOOTGUN: this omnipotence is granted at SEED time, not at runtime
+            // (there is deliberately no Gate::before bypass — policies like the
+            // self-edit/self-delete prohibitions must apply to super-admins too).
+            // A permission created after this seeder last ran is therefore NOT
+            // granted automatically: re-run the seeder (it is idempotent)
+            // whenever you add permissions, or super-admin will silently lack
+            // the new ones.
             $permissions = $roleCase === RoleEnum::SuperAdmin
                 ? Permission::where('guard_name', $role->guard_name)->get()
                 : array_map(

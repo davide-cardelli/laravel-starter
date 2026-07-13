@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import UserForm from '@/pages/admin/users/partials/UserForm.vue';
+import { dashboard } from '@/routes';
+import { index, update } from '@/routes/users';
 import type { BreadcrumbItem, Role } from '@/types';
 import type { InertiaForm } from '@inertiajs/vue3';
 import { Head, router } from '@inertiajs/vue3';
@@ -33,16 +35,16 @@ interface Props {
 const props = defineProps<Props>();
 
 const handleSubmit = (form: InertiaForm<UserFormData>) => {
-    form.put(`/admin/users/${props.user.id}`);
+    form.put(update(props.user.id).url);
 };
 
 const handleCancel = () => {
-    router.visit('/admin/users');
+    router.visit(index().url);
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Users', href: '/admin/users' },
+    { title: 'Dashboard', href: dashboard().url },
+    { title: 'Users', href: index().url },
     { title: 'Edit' },
 ];
 </script>

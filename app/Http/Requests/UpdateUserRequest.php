@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 /**
@@ -21,7 +21,11 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('edit users') ?? false;
+        // UserPolicy::update is the single source of truth: it requires the
+        // edit-users permission AND forbids self-editing through the admin
+        // panel (which would bypass the current-password and email
+        // re-verification safeguards of the profile settings flow).
+        return $this->user()?->can('update', $this->route('user')) ?? false;
     }
 
     /**
@@ -35,19 +39,13 @@ class UpdateUserRequest extends FormRequest
         $user = $this->route('user');
 
         return [
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'regex:/^[+]?[0-9\s\-()]+$/', 'max:25'],
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users')->ignore($user->id),
-            ],
+            'first_name' => User::nameRules(),
+            'last_name' => User::nameRules(),
+            'phone' => User::phoneRules(),
+            'email' => User::emailRules($user->id),
             'password' => ['nullable', 'string', Password::defaults(), 'confirmed'],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', Rule::exists('roles', 'name')],
+            'roles.*' => Role::assignmentRules(),
         ];
     }
 

@@ -83,23 +83,21 @@ test('create user action logs operation', function () {
         'password' => 'password123',
     ];
 
-    $action->execute($userData);
+    $created = $action->execute($userData);
 
+    // The audit trail must carry identifiers only — no email/name/phone PII.
     Log::shouldHaveReceived('info')
         ->with('Creating new user', [
-            'email' => 'jane@example.com',
-            'first_name' => 'Jane',
-            'last_name' => 'Doe',
-            'phone' => '+39 333 1234567',
             'roles' => null,
             'created_by' => $admin->id,
         ])
         ->once();
 
     Log::shouldHaveReceived('info')
-        ->withArgs(function ($message, $context) {
+        ->withArgs(function ($message, $context) use ($created) {
             return $message === 'User created successfully' &&
-                   $context['email'] === 'jane@example.com';
+                   $context['user_id'] === $created->id &&
+                   ! array_key_exists('email', $context);
         })
         ->once();
 });

@@ -14,6 +14,7 @@ import {
 import { useCan } from '@/composables/useCan';
 import { useConfirm } from '@/composables/useConfirm';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
 import { create, destroy, edit, index, show } from '@/routes/users';
 import type { BreadcrumbItem, Role } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -83,7 +84,7 @@ const deleteUser = async (user: User) => {
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Dashboard', href: dashboard().url },
     { title: 'Users' },
 ];
 </script>

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\Role;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 /**
@@ -31,13 +32,13 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'regex:/^[+]?[0-9\s\-()]+$/', 'max:25'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'first_name' => User::nameRules(),
+            'last_name' => User::nameRules(),
+            'phone' => User::phoneRules(),
+            'email' => User::emailRules(),
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', Rule::exists('roles', 'name')],
+            'roles.*' => Role::assignmentRules(),
         ];
     }
 

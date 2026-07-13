@@ -33,11 +33,9 @@ class CreateUser
      */
     public function execute(array $data, ?array $roles = null): User
     {
+        // Log identifiers and metadata only: emails, names and phone numbers
+        // are PII and do not belong in log files.
         Log::info('Creating new user', [
-            'email' => $data['email'],
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'phone' => $data['phone'],
             'roles' => $roles,
             'created_by' => Auth::id(),
         ]);
@@ -63,8 +61,6 @@ class CreateUser
 
         Log::info('User created successfully', [
             'user_id' => $user->id,
-            'email' => $user->email,
-            'name' => $user->name,
             'roles' => $roles,
         ]);
 
