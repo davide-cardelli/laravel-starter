@@ -21,7 +21,11 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('edit users') ?? false;
+        // UserPolicy::update is the single source of truth: it requires the
+        // edit-users permission AND forbids self-editing through the admin
+        // panel (which would bypass the current-password and email
+        // re-verification safeguards of the profile settings flow).
+        return $this->user()?->can('update', $this->route('user')) ?? false;
     }
 
     /**

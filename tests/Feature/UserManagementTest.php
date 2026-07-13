@@ -370,6 +370,32 @@ test('user cannot delete other users', function () {
     ]);
 });
 
+test('user cannot update themselves through the admin panel', function () {
+    $admin = User::factory()->create([
+        'first_name' => 'Original',
+    ]);
+    $admin->assignRole('super-admin');
+
+    // Self-editing via the admin endpoint would change the password without
+    // current_password and the email without re-verification, so the policy
+    // must reject it even for the highest role.
+    actingAs($admin)
+        ->put(route('users.update', $admin), [
+            'first_name' => 'Hijacked',
+            'last_name' => 'Self',
+            'phone' => '+39 333 9999999',
+            'email' => 'sneaky-new-email@example.com',
+            'password' => 'brand-new-password',
+            'password_confirmation' => 'brand-new-password',
+        ])
+        ->assertStatus(403);
+
+    assertDatabaseHas('users', [
+        'id' => $admin->id,
+        'first_name' => 'Original',
+    ]);
+});
+
 test('user cannot delete themselves', function () {
     $user = User::factory()->create();
     $user->assignRole('super-admin');
