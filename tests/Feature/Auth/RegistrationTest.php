@@ -1,8 +1,14 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Notification;
+
+beforeEach(function () {
+    // Registration assigns the base 'user' role, which must exist.
+    $this->seed(RolePermissionSeeder::class);
+});
 
 test('registration screen can be rendered', function () {
     $response = $this->get(route('register'));
@@ -30,6 +36,7 @@ test('new users can register', function () {
     // they confirm the address.
     $user = User::where('email', 'test@example.com')->firstOrFail();
     expect($user->hasVerifiedEmail())->toBeFalse();
+    expect($user->hasRole('user'))->toBeTrue();
     Notification::assertSentTo($user, VerifyEmail::class);
 
     $this->get(route('dashboard'))

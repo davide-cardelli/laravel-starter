@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Fortify;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -35,12 +36,19 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        return User::create([
+        $user = User::create([
             'first_name' => $input['first_name'],
             'last_name' => $input['last_name'],
             'phone' => $input['phone'],
             'email' => $input['email'],
             'password' => $input['password'],
         ]);
+
+        // Self-registered accounts start at the bottom of the hierarchy,
+        // consistent with every other creation path (the admin forms assign
+        // roles explicitly). Requires the seeded roles (composer setup).
+        $user->assignRole(Role::User->value);
+
+        return $user;
     }
 }
