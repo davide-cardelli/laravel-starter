@@ -48,6 +48,47 @@ it('creates a user through the form and lists it', function () {
     expect(User::where('email', 'ada.lovelace@example.test')->exists())->toBeTrue();
 });
 
+it('assigns a role from the form checkboxes when creating a user', function () {
+    actingAsSuperAdmin();
+
+    $manager = Role::findByName('manager');
+
+    visit('/admin/users/create')
+        ->type('#first_name', 'Margaret')
+        ->type('#last_name', 'Hamilton')
+        ->type('#phone', '+1 (555) 020-3040')
+        ->type('#email', 'margaret.hamilton@example.test')
+        ->type('#password', 'password123')
+        ->type('#password_confirmation', 'password123')
+        // The checkbox is a reka-ui button[role=checkbox], so clicking it must
+        // flip the bound form state — this is exactly the binding under test.
+        ->click('#role-'.$manager->getKey())
+        ->click('[data-test="submit-user-form"]')
+        ->assertSee('margaret.hamilton@example.test')
+        ->assertPathIs('/admin/users');
+
+    $created = User::where('email', 'margaret.hamilton@example.test')->firstOrFail();
+
+    expect($created->hasRole('manager'))->toBeTrue();
+});
+
+it('unchecks a role from the form checkboxes when editing a user', function () {
+    actingAsSuperAdmin();
+
+    $target = User::factory()->withoutTwoFactor()->create();
+    $target->assignRole('manager');
+    $manager = Role::findByName('manager');
+
+    visit('/admin/users/'.$target->getKey().'/edit')
+        // The checkbox renders pre-checked from the server state; clicking it
+        // must uncheck it so the submit syncs the role away.
+        ->click('#role-'.$manager->getKey())
+        ->click('[data-test="submit-user-form"]')
+        ->assertPathIs('/admin/users');
+
+    expect($target->fresh()->hasRole('manager'))->toBeFalse();
+});
+
 it('assigns a role inline and persists it on the server', function () {
     actingAsSuperAdmin();
 

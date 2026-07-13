@@ -133,10 +133,10 @@ const cancel = () => {
                     <Checkbox
                         :id="`role-${role.id}`"
                         :value="role.name"
-                        :checked="form.roles.includes(role.name)"
-                        @update:checked="
-                            (checked: boolean) => {
-                                if (checked) {
+                        :model-value="form.roles.includes(role.name)"
+                        @update:model-value="
+                            (checked: boolean | 'indeterminate') => {
+                                if (checked === true) {
                                     form.roles.push(role.name);
                                 } else {
                                     form.roles = form.roles.filter(
