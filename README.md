@@ -331,10 +331,14 @@ public function store(StoreUserRequest $request, CreateUser $createUser)
 
 | Role | Permissions | Description |
 |------|-------------|-------------|
-| **super-admin** | All permissions | Full system access |
-| **admin** | User + content management | Administrative access |
-| **manager** | Content management | Content editing only |
-| **user** | Basic viewing | Standard user access |
+| **super-admin** | All permissions | Full access; only another super-admin can grant or revoke it, and the last super-admin can never be deleted or demoted |
+| **admin** | All permissions | Full access like super-admin, but ranks below it: cannot grant or revoke the super-admin role |
+| **manager** | View users + content management | Content editing, read-only on users |
+| **user** | View content | Standard user access (default on self-registration) |
+
+Role authority follows a rank hierarchy defined on the `Role` enum
+(`super-admin > admin > manager > user`): holders of the `assign roles`
+permission can only grant or revoke roles at or below their own rank.
 
 ### Customization
 
@@ -682,12 +686,12 @@ npm install
 ./vendor/bin/sail artisan migrate:fresh --seed
 ```
 
-### Permission Denied on Git Hooks
+### Git Hooks Not Running
 
 ```bash
-# Make hooks executable
-chmod +x .git/hooks/pre-commit
-chmod +x .git/hooks/pre-push
+# Hooks are tracked in .githooks/ and activated by composer setup;
+# re-activate manually if needed:
+git config core.hooksPath .githooks
 ```
 
 ### PHPStan Cache Issues
