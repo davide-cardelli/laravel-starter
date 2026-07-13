@@ -506,6 +506,15 @@ Every Action logs:
 - 🔒 **Sensitive data protected** - Tokens, API keys excluded
 - 🔒 **Audit trail** - All operations tracked with user context
 
+### Deploying behind a proxy
+
+The template trusts the immediate upstream proxy (`trustProxies(at: '*')` in
+`bootstrap/app.php`) so that, behind a TLS-terminating load balancer or CDN,
+the real client IP reaches the per-IP rate limiters (login, register,
+password reset) and HTTPS detection keeps cookies `Secure`. If clients can
+also reach the app server directly, tighten `'*'` to your proxy's explicit
+IPs/CIDRs to prevent `X-Forwarded-For` spoofing.
+
 ---
 
 ## 🧪 Testing

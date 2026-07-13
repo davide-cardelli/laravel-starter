@@ -17,6 +17,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Behind a TLS-terminating proxy (load balancer, Cloudflare, nginx)
+        // the request IP would otherwise be the proxy's own, collapsing the
+        // per-IP rate limiters (login, register, password reset) into a
+        // single shared bucket and breaking secure-cookie/https detection.
+        // '*' trusts the immediate upstream hop; if clients can also reach
+        // the app directly, replace it with your proxy's explicit CIDRs
+        // (env() is unavailable here once config is cached, so hardcode or
+        // read from config).
+        $middleware->trustProxies(at: '*');
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [
