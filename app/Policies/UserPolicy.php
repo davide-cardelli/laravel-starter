@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Enums\Permission;
+use App\Enums\Role;
 use App\Models\User;
 
 /**
@@ -49,6 +50,14 @@ class UserPolicy
             return false;
         }
 
+        // Rank guard: editing a user resets their password/email, so a lower-ranked
+        // actor must not edit one who outranks them — otherwise an admin could reset
+        // a super-admin's credentials and take the account over. Mirrors the rank
+        // hierarchy already enforced on role assignment.
+        if (! $this->canManageRank($user, $model)) {
+            return false;
+        }
+
         return $user->can(Permission::EditUsers->value);
     }
 
@@ -59,6 +68,14 @@ class UserPolicy
     {
         // Users can't delete themselves
         if ($user->id === $model->id) {
+            return false;
+        }
+
+        // Rank guard: deleting an account is at least as destructive as stripping
+        // its roles (which IS rank-protected), so a lower-ranked actor must not be
+        // able to delete one who outranks them — e.g. an admin annihilating a
+        // super-admin.
+        if (! $this->canManageRank($user, $model)) {
             return false;
         }
 
@@ -79,5 +96,25 @@ class UserPolicy
     public function removeRole(User $user): bool
     {
         return $user->can(Permission::AssignRoles->value); // Same permission as assign
+    }
+
+    /**
+     * Whether the actor's rank authority covers the target user.
+     *
+     * A super-admin may only be managed by another super-admin — the one hard
+     * rank invariant (mirroring Role::canAssign's special-casing), and the gap
+     * that let a mere admin reset a super-admin's credentials or delete the
+     * account. Roles below super-admin do not bound account edits: the
+     * permission check governs them, and — unlike the four enum roles — custom
+     * runtime roles carry no rank to compare, so treating a custom-role actor
+     * as "rankless" must not lock them out of managing ordinary users.
+     */
+    private function canManageRank(User $actor, User $target): bool
+    {
+        if ($target->hasRole(Role::SuperAdmin->value)) {
+            return $actor->hasRole(Role::SuperAdmin->value);
+        }
+
+        return true;
     }
 }

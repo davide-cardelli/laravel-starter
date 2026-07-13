@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\Permission;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
@@ -420,6 +421,51 @@ test('user cannot delete themselves', function () {
 
     assertDatabaseHas('users', [
         'id' => $user->id,
+    ]);
+});
+
+// RANK GUARD ON UPDATE/DELETE (a lower-ranked actor must not take over a higher-ranked account)
+test('admin cannot update a super-admin through the admin panel', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin'); // holds 'edit users' but ranks below super-admin
+
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    // Resetting a higher-ranked user's password/email is the takeover vector the
+    // rank guard closes: mirror the current values plus a fresh password.
+    actingAs($admin)
+        ->put(route('users.update', $superAdmin), [
+            'first_name' => $superAdmin->first_name,
+            'last_name' => $superAdmin->last_name,
+            'phone' => $superAdmin->phone,
+            'email' => $superAdmin->email,
+            'password' => 'hijacked-password',
+            'password_confirmation' => 'hijacked-password',
+        ])
+        ->assertStatus(403);
+
+    $superAdmin->refresh();
+    expect(Hash::check('hijacked-password', (string) $superAdmin->password))->toBeFalse();
+});
+
+test('admin cannot delete a super-admin even when another remains', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin'); // holds 'delete users' but ranks below super-admin
+
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    // A second super-admin so the last-super-admin guard is NOT what blocks it:
+    // the rank guard must reject the deletion on its own.
+    User::factory()->create()->assignRole('super-admin');
+
+    actingAs($admin)
+        ->delete(route('users.destroy', $superAdmin))
+        ->assertStatus(403);
+
+    assertDatabaseHas('users', [
+        'id' => $superAdmin->id,
     ]);
 });
 
